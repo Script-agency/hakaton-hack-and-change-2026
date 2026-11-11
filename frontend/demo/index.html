@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget integration demo</title>
+  </head>
+  <body>
+    <p>Страница хостера. Содержимое виджета пока пустое.</p>
+    <div id="widget"></div>
+    <button id="unmount" type="button">Отключить виджет</button>
+    <button id="remount" type="button">Подключить заново</button>
+    <script src="../widget.js"></script>
+    <script>
+      const container = document.getElementById("widget");
+
+      const mountWidget = () => {
+        OurWidget.unmount(container);
+        OurWidget.mount({ container, initialPath: "/" });
+      };
+
+      document.getElementById("unmount").addEventListener("click", () => {
+        OurWidget.unmount(container);
+      });
+      document.getElementById("remount").addEventListener("click", mountWidget);
+      mountWidget();
+    </script>
+  </body>
+</html>

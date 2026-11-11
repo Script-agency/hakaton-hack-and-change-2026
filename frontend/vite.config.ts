@@ -2,8 +2,10 @@ import { fileURLToPath, URL } from "node:url";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
+import { widgetStyles } from "./tooling/widget-styles";
+
 export default defineConfig(({ command }) => ({
-  plugins: [react()],
+  plugins: [react(), widgetStyles()],
   define: command === "build" ? { "process.env.NODE_ENV": JSON.stringify("production") } : {},
   resolve: {
     alias: {
@@ -18,5 +20,20 @@ export default defineConfig(({ command }) => ({
   server: {
     port: 3000,
     strictPort: true,
+  },
+  build: {
+    lib: {
+      entry: fileURLToPath(new URL("./src/widget.tsx", import.meta.url)),
+      name: "OurWidget",
+      formats: ["iife"],
+      fileName: () => "widget.js",
+    },
+    cssCodeSplit: false,
+    copyPublicDir: false,
+    rollupOptions: {
+      output: {
+        inlineDynamicImports: true,
+      },
+    },
   },
 }));
