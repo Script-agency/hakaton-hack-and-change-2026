@@ -34,7 +34,7 @@ Passport OAuth2, роли сотрудников, CRM/email интеграции
 
 ## Стек
 
-PHP 8.1 + Yii2 (Clean Architecture, DDD, CQRS); Python generation service; React + TypeScript; PostgreSQL; Redis; transactional outbox; Docker Compose; Markdown и OpenAPI/Swagger. pgvector — кандидат для векторного поиска, окончательный выбор подтверждается тестами.
+PHP 8.1 + Yii2 (Clean Architecture, DDD, CQRS); Python generation service; React 19 + TypeScript (FSD, встраиваемый микрофронтенд); PostgreSQL; Redis; transactional outbox; Docker Compose; Markdown и OpenAPI/Swagger. pgvector — кандидат для векторного поиска, окончательный выбор подтверждается тестами.
 
 ## Структура
 
@@ -44,7 +44,14 @@ PHP 8.1 + Yii2 (Clean Architecture, DDD, CQRS); Python generation service; React
 │   ├── core/
 │   ├── modules/
 │   └── docs/specification/
-├── frontend/                # React + TypeScript micro-frontend
+├── frontend/                # React + TypeScript, встраиваемый микрофронтенд на FSD
+│   ├── src/
+│   │   ├── app/
+│   │   ├── pages/
+│   │   ├── widgets/
+│   │   ├── features/
+│   │   ├── entities/
+│   │   └── shared/
 │   └── docs/
 ├── services/                # Python-сервисы, включая generation
 ├── infrastructure/          # Общие инфраструктурные материалы
