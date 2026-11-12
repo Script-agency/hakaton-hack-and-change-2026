@@ -10,5 +10,8 @@ declare(strict_types=1);
  * ],
  */
 return [
-
+    'ai' => [
+        'class' => 'modules\ai\Module',
+        'controllerNamespace' => 'modules\ai\presentation\controller',
+    ],
 ];

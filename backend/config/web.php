@@ -13,6 +13,7 @@ $db             = require __DIR__ . '/db.php';
 $modules        = require __DIR__ . '/modules.php';
 $container      = __DIR__ . '/container.php';
 $diConfigs          = [
+    __DIR__ . '/../modules/ai/config/di.php',
 ];
 
 $config = [
@@ -82,6 +83,7 @@ $config = [
             'enablePrettyUrl'   => true,
             'showScriptName'    => false,
             'rules' =>  array_merge(
+                require __DIR__ . '/../modules/ai/config/routing.php',
                 [
                     // Swagger documentation
                     'docs/swagger/json'             => 'swagger/json',
