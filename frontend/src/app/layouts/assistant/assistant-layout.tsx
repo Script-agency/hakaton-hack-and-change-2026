@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type PropsWithChildren } from "react";
+import { useId, useRef, useState, type KeyboardEvent, type PropsWithChildren } from "react";
 
 import { AssistantLauncher } from "./assistant-launcher";
 import styles from "./assistant-layout.module.scss";
@@ -6,38 +6,38 @@ import { AssistantPanel } from "./assistant-panel";
 
 export const AssistantLayout = ({ children }: PropsWithChildren) => {
   const [isOpen, setIsOpen] = useState(false);
+
   const panelId = useId();
   const launcherRef = useRef<HTMLButtonElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const hasOpened = useRef(false);
+  const panelRef = useRef<HTMLElement>(null);
 
-  const openPanel = () => {
-    hasOpened.current = true;
-    setIsOpen(true);
+  const closePanel = () => {
+    setIsOpen(false);
+    launcherRef.current?.focus();
   };
 
-  const focusLauncher = () => {
-    if (hasOpened.current) {
-      launcherRef.current?.focus();
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (isOpen && event.key === "Escape") {
+      event.stopPropagation();
+      closePanel();
     }
   };
 
   return (
-    <div className={styles.layout}>
+    <div className={styles.layout} onKeyDown={handleKeyDown}>
       <AssistantLauncher
         buttonRef={launcherRef}
         isOpen={isOpen}
-        onClick={openPanel}
-        onShow={focusLauncher}
+        onClick={() => {
+          if (isOpen) {
+            closePanel();
+          } else {
+            setIsOpen(true);
+          }
+        }}
         panelId={panelId}
       />
-      <AssistantPanel
-        closeButtonRef={closeButtonRef}
-        id={panelId}
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onShow={() => closeButtonRef.current?.focus()}
-      >
+      <AssistantPanel id={panelId} isOpen={isOpen} onShow={() => panelRef.current?.focus()} panelRef={panelRef}>
         {children}
       </AssistantPanel>
     </div>

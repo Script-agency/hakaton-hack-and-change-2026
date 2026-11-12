@@ -1,11 +1,13 @@
 .layout {
+  --launcher-size: 56px;
+  --panel-gap: 12px;
+
   position: relative;
-  width: 56px;
-  height: 56px;
+  width: var(--launcher-size);
+  height: var(--launcher-size);
 }
 
-.launcher,
-.closeButton {
+.launcher {
   display: grid;
   padding: 0;
   border: 0;
@@ -19,8 +21,8 @@
 }
 
 .launcher {
-  width: 56px;
-  height: 56px;
+  width: var(--launcher-size);
+  height: var(--launcher-size);
   border-radius: 50%;
   color: var(--color-on-brand);
   background: var(--color-brand);
@@ -34,37 +36,25 @@
 .panel {
   position: absolute;
   right: 0;
-  bottom: 0;
+  bottom: calc(var(--launcher-size) + var(--panel-gap));
   visibility: hidden;
   transform-origin: bottom right;
   display: flex;
   flex-direction: column;
-  width: min(380px, calc(100vw - 32px));
-  height: min(560px, calc(100dvh - 32px));
+  width: min(380px, calc(100vw - max(16px, env(safe-area-inset-right)) - max(16px, env(safe-area-inset-left))));
+  height: min(
+    560px,
+    calc(
+      100dvh - max(16px, env(safe-area-inset-bottom)) - max(16px, env(safe-area-inset-top)) - var(
+          --launcher-size
+        ) - var(--panel-gap)
+    )
+  );
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 20px;
   background: var(--color-background);
   box-shadow: 0 12px 48px var(--color-shadow-panel);
-}
-
-.header {
-  display: flex;
-  flex-shrink: 0;
-  justify-content: flex-end;
-  padding: 12px;
-}
-
-.closeButton {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  color: var(--color-icon);
-  background: var(--color-transparent);
-
-  &:hover {
-    background: var(--color-surface);
-  }
 }
 
 .content {
