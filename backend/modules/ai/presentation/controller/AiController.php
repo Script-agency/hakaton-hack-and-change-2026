@@ -33,7 +33,7 @@ class AiController extends BaseController
 
     #[OA\Get(
         path: '/ai/settings',
-        description: 'Возвращает информацию о текущих настройках AI без раскрытия API-ключа.',
+        description: 'Возвращает информацию о текущих настройках AI без раскрытия API-ключа. Базовые настройки берутся из ENV/params.php и могут быть переопределены через cookie.',
         summary: 'Проверка наличия настроек AI',
         tags: ['ai'],
         responses: [
@@ -61,6 +61,7 @@ class AiController extends BaseController
      * GET /ai/settings
      *
      * Проверяет, установлены ли настройки AI (без возврата ключа).
+     * Возвращает model и baseUrl из объединённого источника (env + cookie).
      */
     public function actionSettings(): SuccessDto
     {
@@ -70,8 +71,8 @@ class AiController extends BaseController
 
     #[OA\Post(
         path: '/ai/settings',
-        description: 'Сохраняет baseUrl, apiKey и model в httponly cookie.',
-        summary: 'Сохранение настроек AI',
+        description: 'Сохраняет baseUrl, apiKey и model в httponly cookie, переопределяя базовые настройки из ENV.',
+        summary: 'Сохранение настроек AI (переопределение ENV)',
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -113,7 +114,7 @@ class AiController extends BaseController
     /**
      * POST  /ai/settings
      *
-     * Сохраняет настройки AI в httponly cookie.
+     * Сохраняет настройки AI в httponly cookie, переопределяя базовые из ENV.
      *
      * Body: { baseUrl: string, apiKey: string, model: string }
      */
@@ -140,7 +141,7 @@ class AiController extends BaseController
 
     #[OA\Post(
         path: '/ai/chat',
-        description: 'Проксирует запрос к AI-провайдеру. Требует предварительно сохранённых настроек.',
+        description: 'Проксирует запрос к AI-провайдеру. Настройки берутся из ENV + cookie (cookie приоритетнее). Можно переопределить модель в теле запроса.',
         summary: 'Запрос к нейросети',
         requestBody: new OA\RequestBody(
             required: true,
@@ -152,6 +153,13 @@ class AiController extends BaseController
                         description: 'Системный промпт',
                         type: 'string',
                         nullable: true,
+                    ),
+                    new OA\Property(
+                        property: 'modelOverride',
+                        description: 'Переопределение модели для данного запроса',
+                        type: 'string',
+                        nullable: true,
+                        example: 'gpt-4o',
                     ),
                     new OA\Property(
                         property: 'messages',
@@ -211,21 +219,23 @@ class AiController extends BaseController
     /**
      * POST /ai/chat
      *
-     * Проксирует запрос к нейросети.
+     * Проксирует запрос к нейросети. Настройки — ENV + cookie (cookie приоритетнее).
+     * modelOverride опционально переопределяет модель для одного запроса.
      *
-     * Body: { systemPrompt?: string, messages: array<{role: string, content: string}> }
+     * Body: { systemPrompt?: string, modelOverride?: string, messages: array<{role: string, content: string}> }
      */
     public function actionChat(): ErrorDto|SuccessDto
     {
         if (!$this->aiService->hasSettings()) {
             return $this->error(
-                'AI settings not configured. Please set baseUrl, apiKey and model first.',
+                'AI settings not configured. Please set baseUrl, apiKey and model in .env or via POST /ai/settings.',
             );
         }
 
         $request = Yii::$app->request;
-        $systemPrompt = trim((string)$request->getBodyParam('systemPrompt', ''));
-        $messages     = $request->getBodyParam('messages', []);
+        $systemPrompt  = trim((string)$request->getBodyParam('systemPrompt', ''));
+        $modelOverride = trim((string)$request->getBodyParam('modelOverride', ''));
+        $messages      = $request->getBodyParam('messages', []);
 
         if (!is_array($messages) || $messages === []) {
             return $this->error(
@@ -234,7 +244,7 @@ class AiController extends BaseController
         }
 
         try {
-            $response = $this->aiService->chat($systemPrompt, $messages);
+            $response = $this->aiService->chat($systemPrompt, $messages, $modelOverride !== '' ? $modelOverride : null);
             return $this->success($response);
         } catch (AiRateLimitException $e) {
             return $this->error('Rate limit exceeded. Please try later.', 429);

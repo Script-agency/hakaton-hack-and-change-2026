@@ -14,30 +14,35 @@ class AiCookieStorage
     private const COOKIE_API_KEY  = 'ai_api_key';
     private const COOKIE_MODEL    = 'ai_model';
 
-    /**
-     * Проверяет, установлены ли все настройки AI в cookie.
-     */
-    public function hasSettings(): bool
-    {
-        $request = Yii::$app->request;
-        $baseUrl = $request->cookies->getValue(self::COOKIE_BASE_URL, '');
-        $apiKey  = $request->cookies->getValue(self::COOKIE_API_KEY, '');
-        $model   = $request->cookies->getValue(self::COOKIE_MODEL, '');
-
-        return $baseUrl !== '' && $apiKey !== '' && $model !== '';
+    public function __construct(
+        private readonly AiSettingsDto $baseSettings,
+    ) {
     }
 
     /**
-     * Возвращает DTO с настройками из cookie.
+     * Проверяет, заполнены ли все обязательные настройки AI.
+     * Сначала проверяет cookie, если не все — падает на baseSettings из env/params.
+     */
+    public function hasSettings(): bool
+    {
+        $cookieSettings = $this->getCookieSettings();
+        if ($cookieSettings->isComplete()) {
+            return true;
+        }
+        return $this->baseSettings->isComplete();
+    }
+
+    /**
+     * Возвращает объединённые настройки: значения из cookie переопределяют baseSettings.
      */
     public function getSettings(): AiSettingsDto
     {
-        $request = Yii::$app->request;
+        $cookie = $this->getCookieSettings();
 
         return new AiSettingsDto(
-            baseUrl: $request->cookies->getValue(self::COOKIE_BASE_URL, ''),
-            apiKey:  $request->cookies->getValue(self::COOKIE_API_KEY, ''),
-            model:   $request->cookies->getValue(self::COOKIE_MODEL, ''),
+            baseUrl: $cookie->baseUrl !== '' ? $cookie->baseUrl : $this->baseSettings->baseUrl,
+            apiKey:  $cookie->apiKey !== ''  ? $cookie->apiKey  : $this->baseSettings->apiKey,
+            model:   $cookie->model !== ''   ? $cookie->model   : $this->baseSettings->model,
         );
     }
 
@@ -77,11 +82,25 @@ class AiCookieStorage
     }
 
     /**
-     * Возвращает название модели из cookie (без API-ключа).
+     * Возвращает название модели из объединённых настроек (cookie приоритетнее).
      */
     public function getModelName(): ?string
     {
-        $value = Yii::$app->request->cookies->getValue(self::COOKIE_MODEL);
-        return $value !== null && $value !== '' ? $value : null;
+        $settings = $this->getSettings();
+        return $settings->model !== '' ? $settings->model : null;
+    }
+
+    /**
+     * Читает настройки только из cookie.
+     */
+    private function getCookieSettings(): AiSettingsDto
+    {
+        $request = Yii::$app->request;
+
+        return new AiSettingsDto(
+            baseUrl: $request->cookies->getValue(self::COOKIE_BASE_URL, ''),
+            apiKey:  $request->cookies->getValue(self::COOKIE_API_KEY, ''),
+            model:   $request->cookies->getValue(self::COOKIE_MODEL, ''),
+        );
     }
 }
