@@ -1,0 +1,30 @@
+.loading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 24px;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.spinner {
+  flex-shrink: 0;
+  color: var(--color-brand);
+  animation: spin 900ms linear infinite;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
