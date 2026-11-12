@@ -41,9 +41,9 @@
   transform-origin: bottom right;
   display: flex;
   flex-direction: column;
-  width: min(380px, calc(100vw - max(16px, env(safe-area-inset-right)) - max(16px, env(safe-area-inset-left))));
+  width: min(360px, calc(100vw - max(16px, env(safe-area-inset-right)) - max(16px, env(safe-area-inset-left))));
   height: min(
-    560px,
+    520px,
     calc(
       100dvh - max(16px, env(safe-area-inset-bottom)) - max(16px, env(safe-area-inset-top)) - var(
           --launcher-size

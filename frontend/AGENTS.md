@@ -186,6 +186,7 @@ import type { Item } from "../types";
 ## Стили и цвета
 
 - Используй SCSS Modules (`*.module.scss`). Общие стили — `src/app/styles/global.scss`.
+- На всех страницах header имеет одинаковую высоту через общую переменную `--widget-header-height`.
 - Стили виджета должны находиться внутри Shadow DOM и не влиять на страницу хостера.
 - Для внешнего контейнера используй `:host`, не `body` и не `:root`.
 - Все цвета задавай через CSS-переменные из `src/shared/styles/colors.scss`.

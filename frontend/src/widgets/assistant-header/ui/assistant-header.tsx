@@ -11,17 +11,31 @@ export const AssistantHeader = ({ onHistoryClick, onNewDialogClick }: AssistantH
   return (
     <header className={styles.header}>
       <div aria-hidden="true" className={styles.avatar}>
-        <MessageSquare size={22} strokeWidth={2} />
+        <MessageSquare size={18} strokeWidth={2} />
       </div>
       <div className={styles.info}>
         <p className={styles.title}>ИИ-помощник</p>
         <p className={styles.subtitle}>ИИ-ассистент МТС</p>
       </div>
-      <button aria-label="История диалогов" className={styles.action} onClick={onHistoryClick} type="button">
-        <Clock aria-hidden="true" size={22} strokeWidth={2} />
+
+      <button
+        aria-label="История диалогов"
+        className={styles.action}
+        onClick={onHistoryClick}
+        title="История диалогов"
+        type="button"
+      >
+        <Clock aria-hidden="true" size={18} strokeWidth={2} />
       </button>
-      <button aria-label="Новый диалог" className={styles.action} onClick={onNewDialogClick} type="button">
-        <SquarePlus aria-hidden="true" size={22} strokeWidth={2} />
+
+      <button
+        aria-label="Новый диалог"
+        className={styles.action}
+        onClick={onNewDialogClick}
+        title="Новый диалог"
+        type="button"
+      >
+        <SquarePlus aria-hidden="true" size={18} strokeWidth={2} />
       </button>
     </header>
   );
