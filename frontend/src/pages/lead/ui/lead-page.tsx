@@ -17,10 +17,14 @@ export const LeadPage = () => {
     void navigate("/");
   };
 
+  const handleSubmit = () => {
+    void navigate("/lead/sent");
+  };
+
   return (
     <div className={styles.page}>
       <PageHeader onBack={handleBack} title="Заявка менеджеру" />
-      <LeadRequestForm summary={previewSummary} />
+      <LeadRequestForm onSubmit={handleSubmit} summary={previewSummary} />
     </div>
   );
 };

@@ -7,7 +7,7 @@ import type { LeadRequestValues } from "../types";
 import styles from "./lead-request-form.module.scss";
 
 interface LeadRequestFormProps {
-  onSubmit?: (values: LeadRequestValues) => void;
+  onSubmit: (values: LeadRequestValues) => void;
   summary: string;
 }
 
@@ -47,7 +47,7 @@ export const LeadRequestForm = ({ onSubmit, summary }: LeadRequestFormProps) => 
       return;
     }
 
-    onSubmit?.({
+    onSubmit({
       company: values.company.trim(),
       fullName: values.fullName.trim(),
       phone: values.phone,
