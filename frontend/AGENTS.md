@@ -61,13 +61,14 @@ src/
 
 Разделяй код слайсов по назначению:
 
-| Сегмент | Содержимое                                                                  |
-| ------- | --------------------------------------------------------------------------- |
-| `model` | Бизнес-логика, query/mutation-хуки и options, query keys, stores, состояние |
-| `api`   | Сервис-классы и взаимодействие с backend                                    |
-| `types` | Типы, интерфейсы, DTO, типы props и контрактов                              |
-| `lib`   | Вспомогательные функции и утилиты                                           |
-| `ui`    | React-компоненты и их SCSS Modules                                          |
+| Сегмент | Содержимое                                                  |
+| ------- | ----------------------------------------------------------- |
+| `model` | Бизнес-логика, query options, query keys, stores, состояние |
+| `hooks` | React-хуки, включая query/mutation-хуки и эффекты UI        |
+| `api`   | Сервис-классы и взаимодействие с backend                    |
+| `types` | Типы, интерфейсы, DTO, типы props и контрактов              |
+| `lib`   | Вспомогательные функции и утилиты                           |
+| `ui`    | React-компоненты и их SCSS Modules                          |
 
 Создавай сегменты по мере необходимости; пустые папки ради структуры не нужны.
 В каждом используемом сегменте обязательно создавай публичный `index.ts`.
@@ -79,8 +80,10 @@ entities/item/
     item.service.ts
     index.ts
   model/
-    use-items.ts
     query-keys.ts
+    index.ts
+  hooks/
+    use-items.ts
     index.ts
   types/
     item.types.ts
@@ -99,7 +102,7 @@ entities/item/
 
 ```ts
 import { ItemService } from "@entities/item/api";
-import { useItems } from "@entities/item/model";
+import { useItems } from "@entities/item/hooks";
 import type { Item } from "@entities/item/types";
 ```
 
@@ -111,7 +114,7 @@ import type { Item } from "../types";
 ```
 
 Не используй импорты вида `@entities/item/api/item.service`,
-`@entities/item/model/use-items` или `../types/item.types` из другого сегмента.
+`@entities/item/hooks/use-items` или `../types/item.types` из другого сегмента.
 Не указывай `/index` в пути: импортируй сам сегмент. Внутри сегмента не импортируй
 его собственный barrel через `.` или `index.ts`: используй относительные пути файлов,
 чтобы не создавать циклические зависимости. Корневой `index.ts` слайса также может
@@ -125,6 +128,9 @@ import type { Item } from "../types";
 - Следуй существующим ESLint и Prettier, включая порядок импортов и JSX props.
 - Не отключай правила ради прохождения проверок; исправляй причину ошибки.
 - Иконки импортируй по имени из `lucide-react`, например `MessageCircle` и `X`.
+- Не добавляй `Animated` в названия компонентов: называй их по назначению, например `Collapse`.
+- Каждый компонент `shared/ui` храни в отдельной папке с компонентом, SCSS Module и публичным `index.ts`.
+- React-хуки храни в сегменте `hooks`, а не в `lib` или `model`. Zustand stores остаются в `model`.
 - Для условных классов используй clsx, для работы с датами — date-fns.
 
 ## Запросы, сервисы и состояние
@@ -135,7 +141,7 @@ import type { Item } from "../types";
 - Единственный общий транспорт — `$axios = axios.create(...)` в `src/shared/api/axios.ts`.
   Импортировать и вызывать `$axios` можно только внутри сервисов `*.service.ts`.
 - Сервисы размещай в `entities/<slice>/api`, экспортируй через `api/index.ts`.
-  Query/mutation-хуки размещай в `model`, типы запросов и ответов — в `types`;
+  Query/mutation-хуки размещай в `hooks`, типы запросов и ответов — в `types`;
   у каждого из этих сегментов должен быть свой публичный `index.ts`.
   Ориентир: класс `_ItemService` с полями `baseUrl`, `client = $axios` и экспортом `ItemService = new _ItemService()`.
 - Сервис возвращает Axios response, а query-функция извлекает `data`.
