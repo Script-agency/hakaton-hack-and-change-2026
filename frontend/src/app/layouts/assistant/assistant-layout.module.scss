@@ -4,26 +4,30 @@
   height: 56px;
 }
 
-.launcher {
+.launcher,
+.closeButton {
   display: grid;
-  width: 56px;
-  height: 56px;
   padding: 0;
   border: 0;
-  border-radius: 50%;
-  color: var(--color-on-brand);
   cursor: pointer;
-  background: var(--color-brand);
-  box-shadow: 0 6px 24px var(--color-shadow-launcher);
   place-items: center;
-
-  &:hover {
-    background: var(--color-brand-hover);
-  }
 
   &:focus-visible {
     outline: 3px solid var(--color-focus);
     outline-offset: 4px;
+  }
+}
+
+.launcher {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  color: var(--color-on-brand);
+  background: var(--color-brand);
+  box-shadow: 0 6px 24px var(--color-shadow-launcher);
+
+  &:hover {
+    background: var(--color-brand-hover);
   }
 }
 
@@ -42,9 +46,24 @@
   border-radius: 20px;
   background: var(--color-background);
   box-shadow: 0 12px 48px var(--color-shadow-panel);
+}
 
-  &:focus {
-    outline: none;
+.header {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: flex-end;
+  padding: 12px;
+}
+
+.closeButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--color-icon);
+  background: var(--color-transparent);
+
+  &:hover {
+    background: var(--color-surface);
   }
 }
 

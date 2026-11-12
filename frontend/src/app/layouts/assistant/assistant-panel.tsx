@@ -1,18 +1,19 @@
 import type { KeyboardEvent, PropsWithChildren, Ref } from "react";
 import * as m from "framer-motion/m";
+import { X } from "lucide-react";
 
 import styles from "./assistant-layout.module.scss";
 import { panelVariants } from "./assistant-motion";
 
 interface AssistantPanelProps extends PropsWithChildren {
+  closeButtonRef: Ref<HTMLButtonElement>;
   id: string;
   isOpen: boolean;
   onClose: () => void;
   onShow: () => void;
-  panelRef: Ref<HTMLElement>;
 }
 
-export const AssistantPanel = ({ children, id, isOpen, onClose, onShow, panelRef }: AssistantPanelProps) => {
+export const AssistantPanel = ({ children, closeButtonRef, id, isOpen, onClose, onShow }: AssistantPanelProps) => {
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === "Escape") {
       event.stopPropagation();
@@ -22,7 +23,6 @@ export const AssistantPanel = ({ children, id, isOpen, onClose, onShow, panelRef
 
   return (
     <m.section
-      ref={panelRef}
       animate={isOpen ? "open" : "closed"}
       aria-hidden={!isOpen}
       aria-label="ИИ-помощник"
@@ -38,9 +38,19 @@ export const AssistantPanel = ({ children, id, isOpen, onClose, onShow, panelRef
       onKeyDown={handleKeyDown}
       role="dialog"
       style={{ pointerEvents: isOpen ? "auto" : "none" }}
-      tabIndex={-1}
       variants={panelVariants}
     >
+      <header className={styles.header}>
+        <button
+          ref={closeButtonRef}
+          aria-label="Закрыть ИИ-помощника"
+          className={styles.closeButton}
+          onClick={onClose}
+          type="button"
+        >
+          <X aria-hidden="true" size={20} strokeWidth={1.8} />
+        </button>
+      </header>
       <div className={styles.content}>{children}</div>
     </m.section>
   );
