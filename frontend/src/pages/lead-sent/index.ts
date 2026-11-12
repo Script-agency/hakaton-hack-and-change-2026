@@ -1,0 +1,1 @@
+export { LeadSentPage } from "./ui";

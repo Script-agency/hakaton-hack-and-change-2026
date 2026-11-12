@@ -8,7 +8,7 @@ export const AssistantLayout = ({ children }: PropsWithChildren) => {
   const [isOpen, setIsOpen] = useState(false);
   const panelId = useId();
   const launcherRef = useRef<HTMLButtonElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const hasOpened = useRef(false);
 
   const openPanel = () => {
@@ -32,11 +32,11 @@ export const AssistantLayout = ({ children }: PropsWithChildren) => {
         panelId={panelId}
       />
       <AssistantPanel
-        closeButtonRef={closeButtonRef}
         id={panelId}
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        onShow={() => closeButtonRef.current?.focus()}
+        onShow={() => panelRef.current?.focus()}
+        panelRef={panelRef}
       >
         {children}
       </AssistantPanel>
