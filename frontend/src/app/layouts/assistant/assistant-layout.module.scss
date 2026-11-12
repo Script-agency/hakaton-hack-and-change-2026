@@ -8,6 +8,10 @@
 }
 
 .launcher {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 2;
   display: grid;
   padding: 0;
   border: 0;
@@ -34,9 +38,10 @@
 }
 
 .panel {
-  position: absolute;
-  right: 0;
-  bottom: calc(var(--launcher-size) + var(--panel-gap));
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--launcher-size) + var(--panel-gap));
+  z-index: 1;
   visibility: hidden;
   transform-origin: bottom right;
   display: flex;
