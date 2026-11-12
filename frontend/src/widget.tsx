@@ -5,6 +5,8 @@ import { App } from "@app/app";
 import { AppProviders } from "@app/providers";
 import { assertWidgetCanMount, getMountedWidget, registerWidget, unregisterWidget } from "@app/widget-instance";
 
+import { resetChatState } from "@entities/chat/hooks";
+
 import { createQueryClient } from "@shared/config";
 
 import { attachStyles } from "./app/styles/style-manager";
@@ -59,6 +61,7 @@ export const mount = ({ container, initialPath = "/" }: WidgetOptions): WidgetIn
 
       mounted = false;
       root.unmount();
+      resetChatState();
       queryClient.clear();
       rootElement.remove();
       detachStyles();
