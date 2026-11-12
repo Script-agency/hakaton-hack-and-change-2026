@@ -1,18 +1,25 @@
-import { Clock, MessageSquare, SquarePlus } from "lucide-react";
+import { ArrowLeft, Clock, MessageSquare, SquarePlus } from "lucide-react";
 
 import styles from "./assistant-header.module.scss";
 
 interface AssistantHeaderProps {
+  onBackClick?: () => void;
   onHistoryClick?: () => void;
   onNewDialogClick?: () => void;
 }
 
-export const AssistantHeader = ({ onHistoryClick, onNewDialogClick }: AssistantHeaderProps) => {
+export const AssistantHeader = ({ onBackClick, onHistoryClick, onNewDialogClick }: AssistantHeaderProps) => {
   return (
     <header className={styles.header}>
-      <div aria-hidden="true" className={styles.avatar}>
-        <MessageSquare size={18} strokeWidth={2} />
-      </div>
+      {onBackClick !== undefined ? (
+        <button aria-label="Назад" className={styles.action} onClick={onBackClick} title="Назад" type="button">
+          <ArrowLeft aria-hidden="true" size={18} strokeWidth={2} />
+        </button>
+      ) : (
+        <div aria-hidden="true" className={styles.avatar}>
+          <MessageSquare size={18} strokeWidth={2} />
+        </div>
+      )}
       <div className={styles.info}>
         <p className={styles.title}>ИИ-помощник</p>
         <p className={styles.subtitle}>ИИ-ассистент МТС</p>

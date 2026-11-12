@@ -1,3 +1,5 @@
+import { Link } from "react-router";
+
 import { Badge, type BadgeTone } from "@shared/ui";
 
 import { formatDialogDate, formatMessageCount } from "../lib";
@@ -17,18 +19,20 @@ export const DialogItem = ({ dialog }: DialogItemProps) => {
   const badge = statusBadges[dialog.status];
 
   return (
-    <li className={styles.item}>
-      <div className={styles.top}>
-        <h3 className={styles.title}>{dialog.title}</h3>
-        <time className={styles.date} dateTime={dialog.updatedAt}>
-          {formatDialogDate(dialog.updatedAt)}
-        </time>
-      </div>
-      <p className={styles.preview}>{dialog.preview}</p>
-      <div className={styles.meta}>
-        <Badge tone={badge.tone}>{badge.label}</Badge>
-        <span className={styles.count}>{formatMessageCount(dialog.messageCount)}</span>
-      </div>
+    <li>
+      <Link className={styles.item} replace state={{ screenTransition: "reveal" }} to={`/chats/${dialog.id}`}>
+        <div className={styles.top}>
+          <h3 className={styles.title}>{dialog.title}</h3>
+          <time className={styles.date} dateTime={dialog.updatedAt}>
+            {formatDialogDate(dialog.updatedAt)}
+          </time>
+        </div>
+        <p className={styles.preview}>{dialog.preview}</p>
+        <div className={styles.meta}>
+          <Badge tone={badge.tone}>{badge.label}</Badge>
+          <span className={styles.count}>{formatMessageCount(dialog.messageCount)}</span>
+        </div>
+      </Link>
     </li>
   );
 };

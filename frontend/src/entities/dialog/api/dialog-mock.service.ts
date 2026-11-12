@@ -1,44 +1,32 @@
-import { subDays, subMinutes } from "date-fns";
+import { subMinutes } from "date-fns";
+
+import { demoDialogs, mockDialogHistory } from "@shared/lib";
 
 import { DialogStatus, type DialogSummary } from "../types";
 
 const createDialogs = (): DialogSummary[] => {
   const now = new Date();
 
+  const demos = demoDialogs.map((dialog) => ({
+    id: dialog.id,
+    title: dialog.title,
+    preview: dialog.turns[dialog.turns.length - 1][1],
+    updatedAt: subMinutes(now, dialog.ageMinutes).toISOString(),
+    messageCount: dialog.turns.length * 2,
+    status: dialog.leadSent ? DialogStatus.LeadSent : DialogStatus.Open,
+  }));
+
+  const records = mockDialogHistory.list();
+
+  const updatedIds = new Set(records.map((record) => record.id));
+
   return [
-    {
-      id: "dialog-warehouse-losses",
-      title: "Потери электроэнергии на складе",
-      preview: "Рекомендовано: АСКУЭ Energytool, баланс по вводу.",
-      updatedAt: subMinutes(now, 25).toISOString(),
-      messageCount: 6,
-      status: DialogStatus.LeadSent,
-    },
-    {
-      id: "dialog-cooperative-metering",
-      title: "Учёт электроэнергии в СНТ",
-      preview: "Для СНТ можно организовать автоматический сбор показаний и контроль баланса.",
-      updatedAt: subDays(now, 1).toISOString(),
-      messageCount: 4,
-      status: DialogStatus.Open,
-    },
-    {
-      id: "dialog-growing-bills",
-      title: "Счета за электричество выросли",
-      preview: "Подскажите, какой у вас объект: офис, производство или посёлок?",
-      updatedAt: subDays(now, 3).toISOString(),
-      messageCount: 2,
-      status: DialogStatus.Open,
-    },
-    {
-      id: "dialog-office-meters",
-      title: "Подбор счётчиков для офиса",
-      preview: "Для офиса подойдут счётчики с удалённым сбором показаний и разбивкой по этажам.",
-      updatedAt: subDays(now, 9).toISOString(),
-      messageCount: 8,
-      status: DialogStatus.LeadSent,
-    },
-  ];
+    ...records.map((record) => ({
+      ...record,
+      status: demos.find((dialog) => dialog.id === record.id)?.status ?? DialogStatus.Open,
+    })),
+    ...demos.filter((dialog) => !updatedIds.has(dialog.id)),
+  ].sort((first, second) => Date.parse(second.updatedAt) - Date.parse(first.updatedAt));
 };
 
 class _DialogMockService {

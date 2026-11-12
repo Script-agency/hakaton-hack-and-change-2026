@@ -10,8 +10,10 @@ export interface ChatMessage {
   debug?: ChatDebugInfo;
 }
 
+export type ChatSessionKey = number | "start";
+
 export interface ChatSession {
-  id: string;
+  id: number;
   messages: ChatMessage[];
 }
 

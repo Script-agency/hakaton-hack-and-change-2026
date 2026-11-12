@@ -1,5 +1,5 @@
 export interface DialogSummary {
-  id: string;
+  id: number;
   title: string;
   preview: string;
   updatedAt: string;

@@ -4,11 +4,12 @@ import { ChatMessageRole, type ChatMessage } from "@entities/chat/types";
 
 interface UseChatScrollOptions {
   messages: readonly ChatMessage[];
+  isReady: boolean;
   isPending: boolean;
   isDebugEnabled: boolean;
 }
 
-export const useChatScroll = ({ messages, isPending, isDebugEnabled }: UseChatScrollOptions) => {
+export const useChatScroll = ({ messages, isPending, isDebugEnabled, isReady }: UseChatScrollOptions) => {
   const viewportRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const shouldFollow = useRef(true);
@@ -24,6 +25,10 @@ export const useChatScroll = ({ messages, isPending, isDebugEnabled }: UseChatSc
   }, [messages, isPending, isDebugEnabled, hasMessages]);
 
   useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
     const viewport = viewportRef.current;
     const content = contentRef.current;
 
@@ -41,7 +46,7 @@ export const useChatScroll = ({ messages, isPending, isDebugEnabled }: UseChatSc
     observer.observe(content);
 
     return () => observer.disconnect();
-  }, []);
+  }, [isReady]);
 
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     const viewport = event.currentTarget;

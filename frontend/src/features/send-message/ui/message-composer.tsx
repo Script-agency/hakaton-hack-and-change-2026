@@ -2,6 +2,7 @@ import type { FormEvent, KeyboardEvent } from "react";
 import { ArrowUp } from "lucide-react";
 
 import { useChatUi } from "@entities/chat/model";
+import type { ChatSessionKey } from "@entities/chat/types";
 
 import { useTextareaAutosize } from "@shared/hooks";
 import { Collapse } from "@shared/ui";
@@ -11,27 +12,30 @@ import styles from "./message-composer.module.scss";
 import { VoiceInputButton } from "./voice-input-button";
 
 interface MessageComposerProps {
-  sessionId: string;
+  sessionId: ChatSessionKey;
+  isActive: boolean;
   isPending: boolean;
   onSend: (text: string) => void;
 }
 
-export const MessageComposer = ({ sessionId, isPending, onSend }: MessageComposerProps) => {
-  const draft = useChatUi((state) => state.draft);
+export const MessageComposer = ({ sessionId, isActive, isPending, onSend }: MessageComposerProps) => {
+  const draft = useChatUi((state) => state.drafts[sessionId] ?? "");
 
-  const setDraft = useChatUi((state) => state.setDraft);
+  const updateDraft = useChatUi((state) => state.setDraft);
+
+  const setDraft = (value: string) => updateDraft(sessionId, value);
 
   const isPanelOpen = useChatUi((state) => state.isPanelOpen);
 
   const voice = useVoiceInput({
     value: draft,
     onChange: setDraft,
-    enabled: isPanelOpen && !isPending,
+    enabled: isActive && isPanelOpen && !isPending,
     sessionId,
   });
 
   const textareaRef = useTextareaAutosize(draft);
-  const isDisabled = isPending || voice.isActive || draft.trim().length === 0;
+  const isDisabled = !isActive || isPending || voice.isActive || draft.trim().length === 0;
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -73,7 +77,7 @@ export const MessageComposer = ({ sessionId, isPending, onSend }: MessageCompose
         />
 
         <VoiceInputButton
-          disabled={isPending}
+          disabled={!isActive || isPending}
           isActive={voice.isActive}
           isStopping={voice.isStopping}
           isSupported={voice.isSupported}
