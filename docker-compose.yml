@@ -63,13 +63,6 @@ services:
       COOKIE_VALIDATION_KEY: "docker-dev-key-change-in-production"
       APP_URL: "http://localhost:8080"
       FRONTEND_URL: "http://localhost"
-      OAUTH2_PUBLIC_KEY_PATH: "/app/config/oauth-public.key"
-      OAUTH2_CLIENT_ID: "script-social"
-      OAUTH2_CLIENT_SECRET: "docker-dev-secret"
-      OAUTH2_ACCESS_TOKEN_TTL: "3600"
-      OAUTH2_REFRESH_TOKEN_TTL: "2592000"
-      PASSPORT_URL: "http://localhost:8080"
-      PASSPORT_SCOPES: "user:read user:write"
     volumes:
       - backend_runtime:/app/runtime
       # Mount source for development (hot-reload PHP changes)
