@@ -1,5 +1,6 @@
 import { Route, Routes } from "react-router";
 
+import { HistoryPage } from "@pages/history";
 import { HomePage } from "@pages/home";
 import { LeadPage } from "@pages/lead";
 import { LeadSentPage } from "@pages/lead-sent";
@@ -13,6 +14,7 @@ export const App = () => {
       <AssistantLayout>
         <Routes>
           <Route element={<HomePage />} path="/" />
+          <Route element={<HistoryPage />} path="/history" />
           <Route element={<LeadPage />} path="/lead" />
           <Route element={<LeadSentPage />} path="/lead/sent" />
           <Route element={null} path="*" />
