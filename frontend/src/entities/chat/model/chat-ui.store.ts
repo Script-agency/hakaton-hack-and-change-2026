@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 export interface ChatUiState {
   isPanelOpen: boolean;
+  isDebugAvailable: boolean;
   isDebugEnabled: boolean;
   draft: string;
   setDebugEnabled: (enabled: boolean) => void;
@@ -11,6 +12,7 @@ export interface ChatUiState {
 
 export const useChatUi = create<ChatUiState>()((set) => ({
   isPanelOpen: false,
+  isDebugAvailable: false,
   isDebugEnabled: false,
   draft: "",
   setDebugEnabled: (isDebugEnabled) => set({ isDebugEnabled }),
@@ -18,6 +20,10 @@ export const useChatUi = create<ChatUiState>()((set) => ({
   setPanelOpen: (isPanelOpen) => set({ isPanelOpen }),
 }));
 
+export const configureChatDebug = (debug: boolean) => {
+  useChatUi.setState({ isDebugAvailable: debug, isDebugEnabled: debug });
+};
+
 export const resetChatUi = () => {
-  useChatUi.setState({ isPanelOpen: false, isDebugEnabled: false, draft: "" });
+  useChatUi.setState({ isPanelOpen: false, isDebugAvailable: false, isDebugEnabled: false, draft: "" });
 };

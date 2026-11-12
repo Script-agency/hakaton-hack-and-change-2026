@@ -25,6 +25,8 @@ const greeting: ChatMessageData = {
 export const ChatConversation = () => {
   const { sessionId, messages, isPending, hasError, sendMessage } = useChat();
 
+  const isDebugAvailable = useChatUi((state) => state.isDebugAvailable);
+
   const isDebugEnabled = useChatUi((state) => state.isDebugEnabled);
 
   const { viewportRef, contentRef, onScroll } = useChatScroll({ messages, isPending, isDebugEnabled });
@@ -32,7 +34,7 @@ export const ChatConversation = () => {
 
   return (
     <div className={styles.conversation}>
-      <Collapse isOpen={hasMessages}>
+      <Collapse isOpen={hasMessages && isDebugAvailable}>
         <DebugModeSwitch />
       </Collapse>
       <div ref={viewportRef} className={styles.viewport} onScroll={onScroll}>

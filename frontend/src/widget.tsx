@@ -6,6 +6,7 @@ import { AppProviders } from "@app/providers";
 import { assertWidgetCanMount, getMountedWidget, registerWidget, unregisterWidget } from "@app/widget-instance";
 
 import { resetChatState } from "@entities/chat/hooks";
+import { configureChatDebug } from "@entities/chat/model";
 
 import { createQueryClient } from "@shared/config";
 
@@ -14,8 +15,8 @@ import { attachStyles } from "./app/styles/style-manager";
 import "./app/styles/global.scss";
 
 export interface WidgetOptions {
-  container: HTMLElement;
-  initialPath?: string;
+  container?: HTMLElement;
+  debug?: boolean;
 }
 
 export interface WidgetInstance {
@@ -24,11 +25,13 @@ export interface WidgetInstance {
 
 const shadows = new WeakMap<HTMLElement, ShadowRoot>();
 
-export const mount = ({ container, initialPath = "/" }: WidgetOptions): WidgetInstance => {
+export const mount = ({ container: providedContainer, debug = false }: WidgetOptions = {}): WidgetInstance => {
   assertWidgetCanMount();
 
-  if (!initialPath.startsWith("/") || initialPath.startsWith("//")) {
-    throw new Error("initialPath must be an internal path starting with /.");
+  const container = providedContainer ?? document.createElement("div");
+
+  if (providedContainer === undefined && document.body === null) {
+    throw new Error("EnergyToolAssistant.mount() requires document.body. Call it after the body is available.");
   }
 
   const shadow = shadows.get(container) ?? container.attachShadow({ mode: "open" });
@@ -41,13 +44,19 @@ export const mount = ({ container, initialPath = "/" }: WidgetOptions): WidgetIn
   rootElement.setAttribute("data-widget-root", "");
   shadow.append(rootElement);
 
+  if (providedContainer === undefined) {
+    document.body.append(container);
+  }
+
+  configureChatDebug(debug);
+
   const root = createRoot(rootElement);
   const queryClient = createQueryClient();
   let mounted = true;
 
   root.render(
     <StrictMode>
-      <AppProviders initialPath={initialPath} queryClient={queryClient}>
+      <AppProviders queryClient={queryClient}>
         <App />
       </AppProviders>
     </StrictMode>
@@ -65,6 +74,11 @@ export const mount = ({ container, initialPath = "/" }: WidgetOptions): WidgetIn
       queryClient.clear();
       rootElement.remove();
       detachStyles();
+
+      if (providedContainer === undefined) {
+        container.remove();
+      }
+
       unregisterWidget(registration);
     },
   };
@@ -76,10 +90,10 @@ export const mount = ({ container, initialPath = "/" }: WidgetOptions): WidgetIn
   return instance;
 };
 
-export const unmount = (container: HTMLElement) => {
+export const unmount = (container?: HTMLElement) => {
   const widget = getMountedWidget();
 
-  if (widget?.container === container) {
+  if (widget !== undefined && (container === undefined || widget.container === container)) {
     widget.instance.unmount();
   }
 };

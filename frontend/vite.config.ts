@@ -24,7 +24,7 @@ export default defineConfig(({ command }) => ({
   build: {
     lib: {
       entry: fileURLToPath(new URL("./src/widget.tsx", import.meta.url)),
-      name: "OurWidget",
+      name: "EnergyToolAssistant",
       formats: ["iife"],
       fileName: () => "widget.js",
     },

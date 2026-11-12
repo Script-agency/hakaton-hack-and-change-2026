@@ -6,14 +6,13 @@ import { MotionProvider } from "./motion-provider";
 
 interface AppProvidersProps extends PropsWithChildren {
   queryClient: QueryClient;
-  initialPath: string;
 }
 
-export const AppProviders = ({ children, queryClient, initialPath }: AppProvidersProps) => {
+export const AppProviders = ({ children, queryClient }: AppProvidersProps) => {
   return (
     <QueryClientProvider client={queryClient}>
       <MotionProvider>
-        <MemoryRouter initialEntries={[initialPath]}>{children}</MemoryRouter>
+        <MemoryRouter initialEntries={["/"]}>{children}</MemoryRouter>
       </MotionProvider>
     </QueryClientProvider>
   );

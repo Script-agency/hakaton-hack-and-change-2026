@@ -82,20 +82,22 @@
         <button id="remount" type="button">Подключить заново</button>
       </div>
     </footer>
-    <div id="widget"></div>
     <script src="../widget.js"></script>
     <script>
-      const container = document.getElementById("widget");
       const mountWidget = () => {
-        OurWidget.unmount(container);
-        OurWidget.mount({ container, initialPath: "/" });
+        EnergyToolAssistant.unmount();
+        EnergyToolAssistant.mount({ debug: true });
       };
       document.getElementById("unmount").addEventListener("click", () => {
-        OurWidget.unmount(container);
+        EnergyToolAssistant.unmount();
       });
       document.getElementById("remount").addEventListener("click", mountWidget);
       document.getElementById("consultation").addEventListener("click", () => {
-        container.shadowRoot?.querySelector("button[aria-expanded='false']")?.click();
+        for (const element of document.body.children) {
+          if (element.shadowRoot?.querySelector("[data-widget-root]")) {
+            element.shadowRoot?.querySelector("button[aria-expanded='false']")?.click();
+          }
+        }
       });
       mountWidget();
     </script>
