@@ -1,9 +1,12 @@
 import { Check } from "lucide-react";
-import { Link } from "react-router";
 
 import styles from "./lead-sent-page.module.scss";
 
-export const LeadSentPage = () => {
+interface LeadSentPageProps {
+  onNewChat: () => void;
+}
+
+export const LeadSentPage = ({ onNewChat }: LeadSentPageProps) => {
   return (
     <div className={styles.page}>
       <div className={styles.content}>
@@ -13,9 +16,9 @@ export const LeadSentPage = () => {
         <h2 className={styles.title}>Заявка отправлена</h2>
         <p className={styles.description}>Менеджер свяжется с вами в рабочее время. Резюме диалога уже передано.</p>
 
-        <Link className={styles.action} title="Вернуться в чат" to="/">
-          Вернуться в чат
-        </Link>
+        <button className={styles.action} onClick={onNewChat} title="Новый чат" type="button">
+          Новый чат
+        </button>
       </div>
     </div>
   );

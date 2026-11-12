@@ -10,11 +10,19 @@ const previewSummary =
   "Подозревает потери электроэнергии. Объект: склад и офис, около 40 точек учёта. " +
   "Рекомендовано: АСКУЭ Energytool, баланс по вводу.";
 
-export const LeadPage = () => {
+interface LeadPageProps {
+  onBack?: () => void;
+}
+
+export const LeadPage = ({ onBack }: LeadPageProps) => {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    void navigate("/");
+    if (onBack !== undefined) {
+      onBack();
+    } else {
+      void navigate("/", { replace: true });
+    }
   };
 
   const handleSubmit = () => {
