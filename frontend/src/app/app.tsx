@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router";
 
 import { HomePage } from "@pages/home";
+import { LeadPage } from "@pages/lead";
 
 import { AssistantLayout } from "./layouts/assistant";
 import styles from "./styles/root.module.scss";
@@ -11,6 +12,7 @@ export const App = () => {
       <AssistantLayout>
         <Routes>
           <Route element={<HomePage />} path="/" />
+          <Route element={<LeadPage />} path="/lead" />
           <Route element={null} path="*" />
         </Routes>
       </AssistantLayout>
