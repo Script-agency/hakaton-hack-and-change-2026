@@ -1,0 +1,120 @@
+services:
+  # -------------------- PostgreSQL --------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: hackaton-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hackaton}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-hackaton}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - hackaton-net
+
+  # -------------------- Redis --------------------
+  redis:
+    image: redis:7-alpine
+    container_name: hackaton-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - hackaton-net
+
+  # -------------------- PHP-FPM (Yii2 Backend) --------------------
+  php-fpm:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    container_name: hackaton-php-fpm
+    restart: unless-stopped
+    environment:
+      # Override .env for Docker development
+      APP_ENV: ${APP_ENV:-dev}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      APP_NAME: ${APP_NAME:-"Script Agency Energytool"}
+
+      # Database — Docker overrides (pgsql, not production mysql)
+      DB_DSN: "pgsql:host=postgres;port=5432;dbname=${POSTGRES_DB:-hackaton}"
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+
+      # Redis — Docker overrides
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+
+      # Other required vars (dummy safe defaults for dev)
+      COOKIE_VALIDATION_KEY: "docker-dev-key-change-in-production"
+      APP_URL: "http://localhost:8080"
+      FRONTEND_URL: "http://localhost"
+    volumes:
+      - backend_runtime:/app/runtime
+      # Mount source for development (hot-reload PHP changes)
+      - ./backend/web:/app/web:delegated
+      - ./backend/config:/app/config:delegated
+      - ./backend/core:/app/core:delegated
+      - ./backend/modules:/app/modules:delegated
+      - ./backend/commands:/app/commands:delegated
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hackaton-net
+
+  # -------------------- Nginx (Backend Proxy) --------------------
+  nginx-backend:
+    image: nginx:alpine
+    container_name: hackaton-nginx-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8080}:80"
+    volumes:
+      - ./docker/backend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./backend/web:/app/web:ro
+    depends_on:
+      - php-fpm
+    networks:
+      - hackaton-net
+
+  # -------------------- Nginx (Frontend Static) --------------------
+  nginx-frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    container_name: hackaton-nginx-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - nginx-backend
+    networks:
+      - hackaton-net
+
+networks:
+  hackaton-net:
+    driver: bridge
+    name: hackaton-net
+
+volumes:
+  postgres_data:
+    name: hackaton-postgres-data
+  backend_runtime:
+    name: hackaton-backend-runtime
