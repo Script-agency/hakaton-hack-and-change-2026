@@ -1,11 +1,15 @@
-import { useId, useRef, useState, type KeyboardEvent, type PropsWithChildren } from "react";
+import { useId, useRef, type KeyboardEvent, type PropsWithChildren } from "react";
+
+import { useChatUi } from "@entities/chat/model";
 
 import { AssistantLauncher } from "./assistant-launcher";
 import styles from "./assistant-layout.module.scss";
 import { AssistantPanel } from "./assistant-panel";
 
 export const AssistantLayout = ({ children }: PropsWithChildren) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const isOpen = useChatUi((state) => state.isPanelOpen);
+
+  const setIsOpen = useChatUi((state) => state.setPanelOpen);
 
   const panelId = useId();
   const launcherRef = useRef<HTMLButtonElement>(null);

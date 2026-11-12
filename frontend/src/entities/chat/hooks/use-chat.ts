@@ -94,6 +94,7 @@ export const useChat = () => {
   };
 
   return {
+    sessionId: session.id,
     messages: session.messages,
     isPending: latestMutation?.status === "pending",
     hasError: error !== undefined && error !== null && error.name !== "AbortError",

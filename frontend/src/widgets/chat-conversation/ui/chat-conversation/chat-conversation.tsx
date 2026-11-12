@@ -23,7 +23,7 @@ const greeting: ChatMessageData = {
 };
 
 export const ChatConversation = () => {
-  const { messages, isPending, hasError, sendMessage } = useChat();
+  const { sessionId, messages, isPending, hasError, sendMessage } = useChat();
 
   const isDebugEnabled = useChatUi((state) => state.isDebugEnabled);
 
@@ -50,7 +50,7 @@ export const ChatConversation = () => {
         </div>
         {!hasMessages ? <SuggestedQuestions onSelect={sendMessage} /> : null}
       </div>
-      <MessageComposer isPending={isPending} onSend={sendMessage} />
+      <MessageComposer isPending={isPending} onSend={sendMessage} sessionId={sessionId} />
     </div>
   );
 };

@@ -1,10 +1,31 @@
 .composer {
   display: flex;
   flex-shrink: 0;
-  gap: 8px;
-  align-items: flex-end;
+  flex-direction: column;
   padding: 8px 10px 10px;
   background: var(--color-background);
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.error {
+  margin: 0 2px 8px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-error);
+}
+
+.recordingStatus {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .input {

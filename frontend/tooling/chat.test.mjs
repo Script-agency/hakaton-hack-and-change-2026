@@ -32,12 +32,14 @@ after(async () => {
 
 test("the shared UI store resets debug settings and the draft for a fresh mount", () => {
   useChatUi.getState().setDebugEnabled(true);
+  useChatUi.getState().setPanelOpen(true);
   useChatUi.getState().setDraft("Склад, 40 точек учёта");
 
   assert.equal(useChatUi.getState().isDebugEnabled, true);
   assert.equal(useChatUi.getState().draft, "Склад, 40 точек учёта");
   resetChatUi();
   assert.equal(useChatUi.getState().isDebugEnabled, false);
+  assert.equal(useChatUi.getState().isPanelOpen, false);
   assert.equal(useChatUi.getState().draft, "");
   useChatUi.getState().setDraft("Новый черновик");
   assert.equal(useChatUi.getState().draft, "Новый черновик");
