@@ -1,6 +1,8 @@
 @use "../../shared/styles/colors";
 
 :host {
+  --widget-header-height: 55px;
+
   position: fixed;
   right: max(16px, env(safe-area-inset-right));
   bottom: max(16px, env(safe-area-inset-bottom));

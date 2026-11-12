@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "@app/app";
 import { AppProviders } from "@app/providers";
+import { assertWidgetCanMount, getMountedWidget, registerWidget, unregisterWidget } from "@app/widget-instance";
+
+import { resetChatState } from "@entities/chat/hooks";
 
 import { createQueryClient } from "@shared/config";
 
@@ -19,13 +22,10 @@ export interface WidgetInstance {
   unmount: () => void;
 }
 
-const instances = new WeakMap<HTMLElement, WidgetInstance>();
 const shadows = new WeakMap<HTMLElement, ShadowRoot>();
 
 export const mount = ({ container, initialPath = "/" }: WidgetOptions): WidgetInstance => {
-  if (instances.has(container)) {
-    throw new Error("A widget is already mounted in this container. Unmount it first.");
-  }
+  assertWidgetCanMount();
 
   if (!initialPath.startsWith("/") || initialPath.startsWith("//")) {
     throw new Error("initialPath must be an internal path starting with /.");
@@ -61,18 +61,25 @@ export const mount = ({ container, initialPath = "/" }: WidgetOptions): WidgetIn
 
       mounted = false;
       root.unmount();
+      resetChatState();
       queryClient.clear();
       rootElement.remove();
       detachStyles();
-      instances.delete(container);
+      unregisterWidget(registration);
     },
   };
 
-  instances.set(container, instance);
+  const registration = { container, instance };
+
+  registerWidget(registration);
 
   return instance;
 };
 
 export const unmount = (container: HTMLElement) => {
-  instances.get(container)?.unmount();
+  const widget = getMountedWidget();
+
+  if (widget?.container === container) {
+    widget.instance.unmount();
+  }
 };

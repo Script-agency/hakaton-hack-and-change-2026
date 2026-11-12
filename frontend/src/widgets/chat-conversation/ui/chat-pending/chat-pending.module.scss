@@ -1,0 +1,20 @@
+.pending {
+  width: fit-content;
+  margin: 0 0 8px;
+  padding: 9px 12px;
+  border-radius: 20px 20px 20px 6px;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+}
+
+.dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 6px;
+}
+
+.dot {
+  display: inline-block;
+}
