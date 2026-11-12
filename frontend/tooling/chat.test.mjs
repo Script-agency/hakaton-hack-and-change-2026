@@ -9,10 +9,12 @@ let useChatUi;
 let resetChatUi;
 let configureChatDebug;
 let widgetRegistry;
+let parseChatId;
 
 before(async () => {
   server = await createServer({
     configFile: false,
+    resolve: { alias: { "@shared": fileURLToPath(new URL("../src/shared", import.meta.url)) } },
     root: fileURLToPath(new URL("..", import.meta.url)),
     server: { middlewareMode: true, ws: false, watch: null },
     optimizeDeps: { noDiscovery: true, include: [] },
@@ -23,6 +25,7 @@ before(async () => {
   widgetRegistry = await server.ssrLoadModule("/src/app/widget-instance.ts");
 
   chatService = serviceModule.ChatMockService;
+  parseChatId = (await server.ssrLoadModule("/src/entities/chat/lib/index.ts")).parseChatId;
   useChatUi = storeModule.useChatUi;
   resetChatUi = storeModule.resetChatUi;
   configureChatDebug = storeModule.configureChatDebug;
@@ -35,16 +38,16 @@ after(async () => {
 test("the shared UI store resets debug settings and the draft for a fresh mount", () => {
   useChatUi.getState().setDebugEnabled(true);
   useChatUi.getState().setPanelOpen(true);
-  useChatUi.getState().setDraft("Склад, 40 точек учёта");
+  useChatUi.getState().setDraft(1, "Склад, 40 точек учёта");
 
   assert.equal(useChatUi.getState().isDebugEnabled, true);
-  assert.equal(useChatUi.getState().draft, "Склад, 40 точек учёта");
+  assert.equal(useChatUi.getState().drafts[1], "Склад, 40 точек учёта");
   resetChatUi();
   assert.equal(useChatUi.getState().isDebugEnabled, false);
   assert.equal(useChatUi.getState().isPanelOpen, false);
-  assert.equal(useChatUi.getState().draft, "");
-  useChatUi.getState().setDraft("Новый черновик");
-  assert.equal(useChatUi.getState().draft, "Новый черновик");
+  assert.deepEqual(useChatUi.getState().drafts, {});
+  useChatUi.getState().setDraft(2, "Новый черновик");
+  assert.equal(useChatUi.getState().drafts[2], "Новый черновик");
   resetChatUi();
 });
 
@@ -93,8 +96,8 @@ test("mounting a second widget is rejected even in another container; unmount re
 });
 
 test("new mock sessions have independent identities and no messages", async () => {
-  const first = await chatService.getSession();
-  const second = await chatService.getSession();
+  const first = await chatService.createSession(new AbortController().signal);
+  const second = await chatService.createSession(new AbortController().signal);
 
   assert.notEqual(first.id, second.id);
   assert.deepEqual(first.messages, []);
@@ -135,5 +138,44 @@ test("suggested questions return relevant mock replies with debug metadata", asy
     assert.equal(reply.role, "assistent");
     assert.ok(reply.debug.responseTimeMs >= 0);
     assert.ok(reply.debug.sources.length > 0);
+  }
+});
+
+test("session creation rejects cancellation and returns a numeric backend-style id", async () => {
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(chatService.createSession(controller.signal), { name: "AbortError" });
+  const session = await chatService.createSession(new AbortController().signal);
+  assert.equal(typeof session.id, "number");
+  assert.ok(Number.isSafeInteger(session.id));
+  assert.ok(session.id > 4);
+});
+
+test("loading messages can be cancelled without delivering a stale conversation", async () => {
+  const controller = new AbortController();
+  const request = chatService.getSession(1, controller.signal);
+  controller.abort();
+  await assert.rejects(request, { name: "AbortError" });
+  await assert.rejects(chatService.getSession(1, controller.signal), { name: "AbortError" });
+});
+
+test("drafts belong to their own sessions while multiple screens remain mounted", () => {
+  useChatUi.getState().setDraft("start", "Новый вопрос");
+  useChatUi.getState().setDraft(1, "Уточнение по складу");
+  useChatUi.getState().setDraft(2, "Вопрос по СНТ");
+  useChatUi.getState().setDraft(1, "");
+  assert.equal(useChatUi.getState().drafts.start, "Новый вопрос");
+  assert.equal(useChatUi.getState().drafts[2], "Вопрос по СНТ");
+  assert.equal(useChatUi.getState().drafts[1], "");
+  resetChatUi();
+  assert.deepEqual(useChatUi.getState().drafts, {});
+});
+
+test("route parameters become numeric session IDs and malformed IDs cannot start a chat", () => {
+  assert.equal(parseChatId("42"), 42);
+  assert.equal(parseChatId("0"), 0);
+  assert.equal(parseChatId(undefined), undefined);
+  for (const value of ["", "abc", "1.5", "-1", "1e3", "9007199254740992", "4276cf18-c49f-4664-93f0-6e8a542e7b6a"]) {
+    assert.equal(parseChatId(value), undefined);
   }
 });

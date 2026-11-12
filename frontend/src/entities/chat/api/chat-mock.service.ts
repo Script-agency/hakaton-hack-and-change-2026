@@ -1,5 +1,7 @@
+import { demoDialogs, mockDialogHistory } from "@shared/lib";
+
 import { createChatSession } from "../lib";
-import { ChatMessageRole, type ChatMessage, type MockReplyRequest } from "../types";
+import { ChatMessageRole, type ChatMessage, type ChatSession, type MockReplyRequest } from "../types";
 
 const getReply = ({ text, turn }: MockReplyRequest) => {
   if (turn > 1) {
@@ -40,7 +42,64 @@ const getReply = ({ text, turn }: MockReplyRequest) => {
 
 // Local demonstration data only; no backend contract or HTTP endpoint is assumed.
 class _ChatMockService {
-  getSession = () => Promise.resolve(createChatSession());
+  private nextSessionId = Math.max(...demoDialogs.map((dialog) => dialog.id)) + 1;
+  createSession = async (signal: AbortSignal): Promise<ChatSession> => {
+    signal.throwIfAborted();
+
+    // Replace this mock with the backend creation request when its contract is available.
+    const session = createChatSession(this.nextSessionId);
+
+    this.nextSessionId += 1;
+
+    return session;
+  };
+  getInitialSession = (id: number): ChatSession => {
+    const dialog = demoDialogs.find((item) => item.id === id);
+
+    return {
+      id,
+      messages:
+        dialog?.turns.flatMap(([question, answer], index) => [
+          { id: `${id}-${index}-user`, role: ChatMessageRole.User, text: question },
+          { id: `${id}-${index}-assistant`, role: ChatMessageRole.Assistent, text: answer },
+        ]) ?? [],
+    };
+  };
+  getSession = (id: number, signal?: AbortSignal): Promise<ChatSession> => {
+    return new Promise((resolve, reject) => {
+      if (signal?.aborted === true) {
+        reject(new DOMException("Request aborted", "AbortError"));
+
+        return;
+      }
+
+      const abort = () => {
+        clearTimeout(timer);
+        reject(new DOMException("Request aborted", "AbortError"));
+      };
+
+      const timer = setTimeout(() => {
+        signal?.removeEventListener("abort", abort);
+        resolve(this.getInitialSession(id));
+      }, 400);
+
+      signal?.addEventListener("abort", abort, { once: true });
+    });
+  };
+  recordSession = (session: ChatSession) => {
+    if (session.messages.length === 0) {
+      return;
+    }
+
+    mockDialogHistory.save({
+      id: session.id,
+      title: session.messages[0].text,
+      preview: session.messages[session.messages.length - 1].text,
+      updatedAt: new Date().toISOString(),
+      messageCount: session.messages.length,
+    });
+  };
+  reset = () => mockDialogHistory.reset();
   sendMessage = (request: MockReplyRequest, signal: AbortSignal): Promise<ChatMessage> => {
     return new Promise((resolve, reject) => {
       if (signal.aborted) {

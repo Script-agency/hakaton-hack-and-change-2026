@@ -3,16 +3,25 @@ import { useNavigate } from "react-router";
 import { useDialogs } from "@entities/dialog/hooks";
 import { DialogItem } from "@entities/dialog/ui";
 
-import { Button, PageHeader } from "@shared/ui";
+import { Button, LoadingState, PageHeader } from "@shared/ui";
 
 import styles from "./history-page.module.scss";
 
-export const HistoryPage = () => {
+interface HistoryPageProps {
+  isActive: boolean;
+  onBack?: () => void;
+}
+
+export const HistoryPage = ({ isActive, onBack }: HistoryPageProps) => {
   const navigate = useNavigate();
-  const { dialogs, isLoading, hasError, retry } = useDialogs();
+  const { dialogs, isLoading, hasError, retry } = useDialogs(isActive);
 
   const handleBack = () => {
-    void navigate("/");
+    if (onBack !== undefined) {
+      onBack();
+    } else {
+      void navigate("/", { replace: true });
+    }
   };
 
   const isEmpty = !isLoading && !hasError && dialogs.length === 0;
@@ -22,11 +31,7 @@ export const HistoryPage = () => {
       <PageHeader onBack={handleBack} title="История диалогов" />
 
       <div className={styles.content}>
-        {isLoading ? (
-          <p className={styles.status} role="status">
-            Загружаю историю
-          </p>
-        ) : null}
+        {isLoading ? <LoadingState label="Загружаю историю…" /> : null}
 
         {hasError && dialogs.length === 0 ? (
           <div className={styles.status} role="alert">

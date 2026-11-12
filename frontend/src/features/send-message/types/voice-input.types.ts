@@ -1,3 +1,5 @@
+import type { ChatSessionKey } from "@entities/chat/types";
+
 export interface VoiceRecognitionResult {
   readonly isFinal: boolean;
   readonly [index: number]: { readonly transcript: string } | undefined;
@@ -37,5 +39,5 @@ export interface UseVoiceInputOptions {
   value: string;
   onChange: (value: string) => void;
   enabled: boolean;
-  sessionId: string;
+  sessionId: ChatSessionKey;
 }

@@ -1,0 +1,18 @@
+.loadError {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 24px;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--color-text-secondary);
+  text-align: center;
+
+  p {
+    margin: 0;
+  }
+}

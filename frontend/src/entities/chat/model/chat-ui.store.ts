@@ -1,12 +1,14 @@
 import { create } from "zustand";
 
+import type { ChatSessionKey } from "../types";
+
 export interface ChatUiState {
   isPanelOpen: boolean;
   isDebugAvailable: boolean;
   isDebugEnabled: boolean;
-  draft: string;
+  drafts: Record<string, string>;
   setDebugEnabled: (enabled: boolean) => void;
-  setDraft: (draft: string) => void;
+  setDraft: (sessionId: ChatSessionKey, draft: string) => void;
   setPanelOpen: (isPanelOpen: boolean) => void;
 }
 
@@ -14,9 +16,9 @@ export const useChatUi = create<ChatUiState>()((set) => ({
   isPanelOpen: false,
   isDebugAvailable: false,
   isDebugEnabled: false,
-  draft: "",
+  drafts: {},
   setDebugEnabled: (isDebugEnabled) => set({ isDebugEnabled }),
-  setDraft: (draft) => set({ draft }),
+  setDraft: (sessionId, draft) => set((state) => ({ drafts: { ...state.drafts, [sessionId]: draft } })),
   setPanelOpen: (isPanelOpen) => set({ isPanelOpen }),
 }));
 
@@ -25,5 +27,5 @@ export const configureChatDebug = (debug: boolean) => {
 };
 
 export const resetChatUi = () => {
-  useChatUi.setState({ isPanelOpen: false, isDebugAvailable: false, isDebugEnabled: false, draft: "" });
+  useChatUi.setState({ isPanelOpen: false, isDebugAvailable: false, isDebugEnabled: false, drafts: {} });
 };
