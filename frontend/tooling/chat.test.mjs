@@ -7,6 +7,7 @@ let server;
 let chatService;
 let useChatUi;
 let resetChatUi;
+let configureChatDebug;
 let widgetRegistry;
 
 before(async () => {
@@ -24,6 +25,7 @@ before(async () => {
   chatService = serviceModule.ChatMockService;
   useChatUi = storeModule.useChatUi;
   resetChatUi = storeModule.resetChatUi;
+  configureChatDebug = storeModule.configureChatDebug;
 });
 
 after(async () => {
@@ -44,6 +46,24 @@ test("the shared UI store resets debug settings and the draft for a fresh mount"
   useChatUi.getState().setDraft("Новый черновик");
   assert.equal(useChatUi.getState().draft, "Новый черновик");
   resetChatUi();
+});
+
+test("debug configuration gates the switch, enables diagnostics and resets on unmount", () => {
+  configureChatDebug(true);
+  assert.equal(useChatUi.getState().isDebugAvailable, true);
+  assert.equal(useChatUi.getState().isDebugEnabled, true);
+
+  useChatUi.getState().setDebugEnabled(false);
+  assert.equal(useChatUi.getState().isDebugAvailable, true);
+  assert.equal(useChatUi.getState().isDebugEnabled, false);
+
+  resetChatUi();
+  assert.equal(useChatUi.getState().isDebugAvailable, false);
+  assert.equal(useChatUi.getState().isDebugEnabled, false);
+
+  configureChatDebug(false);
+  assert.equal(useChatUi.getState().isDebugAvailable, false);
+  assert.equal(useChatUi.getState().isDebugEnabled, false);
 });
 
 test("mounting a second widget is rejected even in another container; unmount releases the guard", () => {

@@ -1,1 +1,1 @@
-export { resetChatUi, useChatUi } from "./chat-ui.store";
+export { configureChatDebug, resetChatUi, useChatUi } from "./chat-ui.store";

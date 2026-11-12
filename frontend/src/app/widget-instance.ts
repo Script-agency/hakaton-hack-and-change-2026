@@ -4,7 +4,7 @@ interface MountedWidget {
 }
 
 // Symbol.for also shares the guard between repeated loads of widget.js on the same page.
-const registryKey = Symbol.for("OurWidget.mountedInstance");
+const registryKey = Symbol.for("EnergyToolAssistant.mountedInstance");
 const registry: typeof globalThis & { [registryKey]?: MountedWidget } = globalThis;
 
 export const getMountedWidget = () => registry[registryKey];
