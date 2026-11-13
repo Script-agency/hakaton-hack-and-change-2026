@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace core\application\port;
+namespace modules\lead\application\port;
 
 use modules\lead\application\dto\LeadFiltersDto;
 use modules\lead\domain\entity\Lead;

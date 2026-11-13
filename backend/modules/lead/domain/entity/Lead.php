@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace core\domain\entity;
+namespace modules\lead\domain\entity;
 
 use modules\lead\domain\enum\LeadStatus;
 use modules\lead\domain\valueObject\LeadId;

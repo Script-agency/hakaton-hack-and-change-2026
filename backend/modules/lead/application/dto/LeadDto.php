@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace core\application\dto;
+namespace modules\lead\application\dto;
 
-use core\domain\entity\Lead;
+use modules\lead\domain\entity\Lead;
 use core\infrastructure\persistence\LeadAR;
 use JsonSerializable;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace core\infrastructure\persistence;
+namespace modules\lead\infrastructure\persistence;
 
 use yii\db\ActiveRecord;
 

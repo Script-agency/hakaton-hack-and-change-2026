@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace core\application\dto;
+namespace modules\lead\application\dto;
 
 class LeadFiltersDto
 {
