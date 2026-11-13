@@ -3,9 +3,6 @@
 declare(strict_types=1);
 
 use core\security\YiiIdentity;
-use modules\passport\auth\presentation\middleware\PassportAuthMiddleware;
-use modules\rbac\presentation\middleware\RbacMiddleware;
-use yii\symfonymailer\Mailer;
 use yii\web\Response;
 
 $params         = require __DIR__ . '/params.php';
@@ -13,6 +10,7 @@ $db             = require __DIR__ . '/db.php';
 $modules        = require __DIR__ . '/modules.php';
 $container      = __DIR__ . '/container.php';
 $diConfigs          = [
+    __DIR__ . '/../modules/ai/config/di.php',
 ];
 
 $config = [
@@ -23,11 +21,13 @@ $config = [
         [
             'class'  => 'core\infrastructure\bootstrap\ResponseFormatBootstrap',
             'routes' => [
-                ''      => Response::FORMAT_HTML,
-                'api'   => Response::FORMAT_JSON,
+                ''      => Response::FORMAT_JSON,
             ],
         ],
-        'core\infrastructure\bootstrap\ErrorHandlerBootstrap',
+        [
+            'class'  => 'core\infrastructure\bootstrap\ErrorHandlerBootstrap',
+            'apiPrefix' => '',
+        ],
         'log',
     ],
     'aliases' => [
@@ -37,8 +37,7 @@ $config = [
         '@modules'  => dirname(__DIR__) . '/modules',
     ],
     'on beforeRequest' => static function (): void {
-        Yii::$container->get(PassportAuthMiddleware::class)->handle();
-        Yii::$container->get(RbacMiddleware::class)->handle();
+
     },
     'modules' => $modules,
     'components' => [
@@ -82,6 +81,7 @@ $config = [
             'enablePrettyUrl'   => true,
             'showScriptName'    => false,
             'rules' =>  array_merge(
+                require __DIR__ . '/../modules/ai/config/routing.php',
                 [
                     // Swagger documentation
                     'docs/swagger/json'             => 'swagger/json',
