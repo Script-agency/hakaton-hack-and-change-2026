@@ -107,6 +107,24 @@ class MainSchemasDefinitions
  *         )
  *     )
  * )
+ * @OA\Schema(
+ *     schema="UpdateLeadStatusRequest",
+ *     required={"status"},
+ *     @OA\Property(
+ *         property="status",
+ *         type="string",
+ *         enum={"new", "in_progress", "closed", "cancelled"},
+ *         description="Новый статус лида",
+ *         example="in_progress"
+ *     ),
+ *     @OA\Property(
+ *         property="manager_note",
+ *         type="string",
+ *         nullable=true,
+ *         description="Комментарий менеджера (опционально). Не передан - существующая заметка не меняется.",
+ *         example="Дозвонились, встреча в четверг в 15:00"
+ *     )
+ * )
  */
 class LeadSchemasDefinitions
 {
