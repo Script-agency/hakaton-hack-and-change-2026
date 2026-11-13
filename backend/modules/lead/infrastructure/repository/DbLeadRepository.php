@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace core\infrastructure\repository;
+namespace modules\lead\infrastructure\repository;
 
 use core\domain\exception\EntityNotFoundException;
 use core\domain\exception\RuntimeException;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace core\application\handler;
+namespace modules\lead\application\handler;
 
 use modules\lead\application\dto\LeadDto;
 use modules\lead\application\port\ILeadRepository;
