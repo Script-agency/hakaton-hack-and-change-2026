@@ -9,7 +9,7 @@ use core\domain\exception\EntityNotFoundException;
 use core\domain\exception\ValidationException;
 use modules\lead\application\command\UpdateLeadStatusCommand;
 use modules\lead\application\dto\LeadDto;
-use modules\lead\application\port\ILeadRepository;
+use modules\lead\domain\repository\ILeadRepository;
 
 class UpdateLeadStatusHandler
 {

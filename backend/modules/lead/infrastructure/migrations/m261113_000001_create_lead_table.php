@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace migrations;
+namespace modules\lead\infrastructure\migrations;
 
 use yii\db\Migration;
 

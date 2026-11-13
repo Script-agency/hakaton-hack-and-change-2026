@@ -9,7 +9,7 @@ use modules\lead\application\query\GetLeadQuery;
 use core\domain\exception\EntityNotFoundException;
 use core\domain\exception\ValidationException;
 use modules\lead\domain\valueObject\LeadId;
-use modules\lead\application\port\ILeadRepository;
+use modules\lead\domain\repository\ILeadRepository;
 
 class GetLeadHandler
 {

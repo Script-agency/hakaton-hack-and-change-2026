@@ -12,7 +12,7 @@ use Exception;
 use modules\lead\infrastructure\persistence\LeadAR;
 use DateTimeImmutable;
 use modules\lead\application\dto\LeadFiltersDto;
-use modules\lead\application\port\ILeadRepository;
+use modules\lead\domain\repository\ILeadRepository;
 use modules\lead\domain\entity\Lead;
 use modules\lead\domain\enum\LeadStatus;
 use modules\lead\domain\valueObject\LeadId;

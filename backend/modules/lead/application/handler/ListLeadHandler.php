@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace modules\lead\application\handler;
 
 use modules\lead\application\dto\LeadDto;
-use modules\lead\application\port\ILeadRepository;
+use modules\lead\domain\repository\ILeadRepository;
 use modules\lead\application\query\ListLeadQuery;
 
 class ListLeadHandler

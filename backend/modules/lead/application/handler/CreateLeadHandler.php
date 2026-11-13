@@ -8,7 +8,7 @@ use core\application\port\ITransactionManager;
 use core\domain\exception\ValidationException;
 use modules\lead\application\command\CreateLeadCommand;
 use modules\lead\application\dto\LeadDto;
-use modules\lead\application\port\ILeadRepository;
+use modules\lead\domain\repository\ILeadRepository;
 use modules\lead\domain\entity\Lead;
 use modules\lead\domain\enum\LeadStatus;
 use modules\lead\domain\valueObject\LeadId;
