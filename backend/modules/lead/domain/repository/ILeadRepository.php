@@ -25,7 +25,7 @@ interface ILeadRepository
     /**
      * Проверка уникальности
      */
-    public function existsByPhone(Phone $phone, ?LeadId $excludeUserId = null): bool;
+    public function existsByPhone(Phone $phone, ?LeadId $excludeLeadId = null): bool;
 
     /**
      * @return Lead[]
@@ -34,5 +34,5 @@ interface ILeadRepository
 
     public function countWithFilters(LeadFiltersDto $filters): int;
 
-    public function save(Lead $user): void;
+    public function save(Lead $lead): void;
 }
