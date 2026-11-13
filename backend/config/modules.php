@@ -14,4 +14,8 @@ return [
         'class' => 'modules\ai\Module',
         'controllerNamespace' => 'modules\ai\presentation\controller',
     ],
+    'lead' => [
+        'class' => 'modules\lead\Module',
+        'controllerNamespace' => 'modules\lead\presentation\controller',
+    ],
 ];

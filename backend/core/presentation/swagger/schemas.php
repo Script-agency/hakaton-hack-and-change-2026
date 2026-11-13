@@ -62,3 +62,70 @@ declare(strict_types=1);
 class MainSchemasDefinitions
 {
 }
+
+/**
+ * @OA\Schema(
+ *     schema="CreateLeadRequest",
+ *     required={"company", "full_name", "phone", "summary"},
+ *     @OA\Property(
+ *         property="company",
+ *         type="string",
+ *         maxLength=255,
+ *         description="Название компании",
+ *         example="ООО Ромашка"
+ *     ),
+ *     @OA\Property(
+ *         property="full_name",
+ *         type="string",
+ *         maxLength=255,
+ *         description="ФИО контактного лица",
+ *         example="Иванов Иван Иванович"
+ *     ),
+ *     @OA\Property(
+ *         property="phone",
+ *         type="string",
+ *         maxLength=20,
+ *         pattern="^\+?[\d\s\-\(\)]+$",
+ *         description="Телефон в произвольном формате (валидируется VO Phone)",
+ *         example="+7 999 123-45-67"
+ *     ),
+ *     @OA\Property(
+ *         property="summary",
+ *         type="string",
+ *         description="Резюме диалога с AI-ассистентом",
+ *         example="Клиент интересуется внедрением CRM, бюджет 500к, срок - до конца квартала."
+ *     ),
+ *     @OA\Property(
+ *         property="messages",
+ *         type="array",
+ *         nullable=true,
+ *         description="История сообщений с AI-агентом (опционально)",
+ *         @OA\Items(
+ *             type="object",
+ *             additionalProperties=true,
+ *             example={"role": "user", "content": "Здравствуйте, хочу узнать про CRM"}
+ *         )
+ *     )
+ * )
+ * @OA\Schema(
+ *     schema="UpdateLeadStatusRequest",
+ *     required={"status"},
+ *     @OA\Property(
+ *         property="status",
+ *         type="string",
+ *         enum={"new", "in_progress", "closed", "cancelled"},
+ *         description="Новый статус лида",
+ *         example="in_progress"
+ *     ),
+ *     @OA\Property(
+ *         property="manager_note",
+ *         type="string",
+ *         nullable=true,
+ *         description="Комментарий менеджера (опционально). Не передан - существующая заметка не меняется.",
+ *         example="Дозвонились, встреча в четверг в 15:00"
+ *     )
+ * )
+ */
+class LeadSchemasDefinitions
+{
+}
