@@ -10,7 +10,7 @@ use modules\lead\domain\valueObject\LeadId;
 use core\domain\valueObject\Phone;
 use core\domain\exception\EntityNotFoundException;
 
-interface IUserRepository
+interface ILeadRepository
 {
     /**
      * @throws EntityNotFoundException
