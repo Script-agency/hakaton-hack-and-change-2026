@@ -250,3 +250,47 @@ class LeadSchemasDefinitions
 class KnowledgeSchemasDefinitions
 {
 }
+
+/**
+ * @OA\Schema(
+ *     schema="GenerationChatRequest",
+ *     required={"question"},
+ *     @OA\Property(
+ *         property="question",
+ *         type="string",
+ *         description="Вопрос пользователя (обязательное поле)",
+ *         example="Как оформить возврат товара?"
+ *     ),
+ *     @OA\Property(
+ *         property="conversation_id",
+ *         type="string",
+ *         nullable=true,
+ *         description="Идентификатор диалога (пробрасывается в generation-сервис)",
+ *         example="conv_01HXYZ"
+ *     ),
+ *     @OA\Property(
+ *         property="context",
+ *         type="array",
+ *         nullable=true,
+ *         description="Дополнительный контекст (пробрасывается в generation-сервис как есть)",
+ *         @OA\Items(type="object", additionalProperties=true)
+ *     ),
+ *     additionalProperties=true,
+ *     description="Тело запроса передаётся в generation-сервис без изменений; показаны только известные поля"
+ * )
+ *
+ * @OA\Schema(
+ *     schema="GenerationChatResponse",
+ *     type="object",
+ *     additionalProperties=true,
+ *     description="Структура ответа определяется generation-сервисом. Пример — типичный ответ LLM.",
+ *     example={
+ *         "answer": "Для оформления возврата обратитесь в службу поддержки...",
+ *         "usage": {"prompt_tokens": 42, "completion_tokens": 128, "total_tokens": 170},
+ *         "conversation_id": "conv_01HXYZ"
+ *     }
+ * )
+ */
+class GenerationSchemasDefinitions
+{
+}
