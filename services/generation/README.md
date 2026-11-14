@@ -35,3 +35,33 @@ The ZIP or directory must contain `category-folder/document.ext` (a single wrapp
 ```bash
 pytest
 ```
+
+
+## Chat history input
+
+`POST /v1/generation/chat` accepts the full chat object from PHP in `chat_messages`.
+The envelope metadata (`id`, `fingerprint`, `created_at`) and per-message database
+metadata (`id`, `chat_id`, `created_at`) are accepted but are not sent to the AI Gateway.
+Only each message's `role` and `content` are forwarded.
+
+```json
+{
+  "question": "Продолжим обсуждение?",
+  "conversation_id": "conv_01HXYZ",
+  "context": [],
+  "chat_messages": {
+    "id": 1,
+    "fingerprint": "a1b2c3d4e5f6",
+    "created_at": "2026-11-14 14:24:51",
+    "messages": [
+      {"id": 1, "chat_id": 1, "role": "user", "content": "Первый вопрос", "created_at": "2026-11-14 14:33:10"},
+      {"id": 2, "chat_id": 1, "role": "assistant", "content": "Первый ответ", "created_at": "2026-11-14 14:33:12"}
+    ]
+  }
+}
+```
+
+The current `question` is appended as the last user message unless it is already
+the last message in the supplied history. The latest 20 messages are sent to the
+AI Gateway. The previous flat `messages: [{role, content}]` input remains supported;
+when both forms are supplied, `chat_messages.messages` takes precedence.

@@ -66,12 +66,13 @@
 2. Роутинг: выбор категорий через `router.route(question, categories, forced_slugs)`
 3. Retrieval: загрузка и ранжирование документов через `retriever.retrieve(question, selected_categories, top_k)`
 4. Сборка system_prompt: базовый SYSTEM_PROMPT + `<knowledge_context>` с найденными источниками
-5. Вызов AI Gateway через `php.chat(system_prompt, messages)`
+5. Выбор истории: `chat_messages.messages` (при наличии) или legacy `messages`; добавление текущего `question`, если его ещё нет последним сообщением; ограничение до последних 20 сообщений.
+6. Вызов AI Gateway через `php.chat(system_prompt, messages)`
 6. Формирование ответа: `{answer, sources, routing, debug?}`
 
 **Конфигурация:**
 - `SYSTEM_PROMPT` — жёстко задан в коде. Инструктирует модель отвечать на русском, использовать только контекст, не выдумывать, не смешивать предположения с фактами.
-- Окно сообщений: хранятся последние 20 сообщений (чтобы не превысить лимит токенов).
+- История диалога принимается в поле `chat_messages` как объект чата PHP (`id`, `fingerprint`, `created_at`, `messages`). Для обратной совместимости также поддерживается старое плоское поле `messages`. В AI Gateway передаются только `role` и `content`; последние 20 сообщений, включая текущий вопрос, сохраняются.
 
 ### KnowledgeRouter (`app/knowledge/router.py`)
 

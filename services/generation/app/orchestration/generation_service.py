@@ -41,7 +41,15 @@ class GenerationService:
         else:
             system_prompt += "\n\nКОНТЕКСТ БАЗЫ ЗНАНИЙ: релевантные материалы не найдены. Не отвечай на вопросы о конкретных возможностях компании без подтверждения."
 
-        messages = [message.model_dump() for message in request.messages]
+        # PHP sends the complete chat envelope in `chat_messages`. Keep the old
+        # flat `messages` contract working for clients that have not been updated.
+        history = (
+            request.chat_messages.messages
+            if request.chat_messages is not None
+            else request.messages
+        )
+        messages = [message.model_dump() for message in history]
+        # The current question is authoritative and must always be the final user turn.
         if not messages or messages[-1]["role"] != "user" or messages[-1]["content"].strip() != request.question.strip():
             messages.append({"role": "user", "content": request.question})
         # Keep only the latest context window; current question is always retained.
