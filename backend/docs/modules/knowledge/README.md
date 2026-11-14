@@ -1,108 +1,129 @@
-# Knowledge module
+# Модуль Knowledge (База знаний)
 
-Модуль управляет структурой базы знаний и оригинальными файлами. PostgreSQL хранит метаданные и привязки категорий, сами документы и вручную заданные текстовые части хранятся в `KNOWLEDGE_STORAGE_PATH`. Redis — кэш извлечённого текста; ключи содержат category ID, revision документа и revision части. Небольшие части (до 256 KiB) передаются inline, крупные отдаются по внутренней ссылке. Python разбивает полученные части на перекрывающиеся фрагменты перед BM25-ранжированием.
+## Обзор
 
-## Данные
+Модуль `knowledge` реализует хранение, каталогизацию и выдачу знаний (документов и их частей) для AI-ассистентов и CRM-системы. Предоставляет административный API для управления категориями, документами и частями (parts), а также внутренний API для поиска и получения контента.
 
-- `knowledge_category` — дерево категорий.
-- `knowledge_document` — оригинальный файл, метаданные, статус и revision.
-- `knowledge_part` — категоризированная часть документа. У части есть `locator_type` (`whole_file`, `heading`, `page_range`, `line_range`) и JSON locator. Необязательное поле `content` в CRUD сохраняется отдельным `.txt` файлом, а не в PostgreSQL.
+**Архитектурный паттерн:** DDD-ориентированные слои (Presentation → Application → Infrastructure) с сервис-ориентированной архитектурой. Вся бизнес-логика сконцентрирована в едином `KnowledgeService`.
 
-Один документ может содержать несколько `knowledge_part` с разными категориями и локаторами. Именно части, а не документы целиком, передаются в retrieval.
+**Ключевые возможности:**
+- Иерархические категории знаний (slug, sort_order, поддержка вложенности с защитой от циклов)
+- Загрузка, хранение и замена файлов документов (md, txt, pdf, docx, html/htm)
+- Разбивка документа на части (parts) с локаторами: whole_file, heading, page_range, line_range
+- Статусная модель документов: `draft` → `published` → `archived`
+- Soft-delete документов с каскадным удалением файлов и частей
+- Поиск и получение опубликованных знаний по категориям (retrieve)
+- Кэширование содержимого частей в Redis (опционально, с инвалидацией по ревизии)
+- OpenAPI-документация в аннотациях контроллеров
 
-## Admin API
+## Содержание документации
 
-Все `/admin/knowledge/*` endpoints требуют `Authorization: Bearer $KNOWLEDGE_ADMIN_TOKEN`.
+| Документ                           | Описание                                                      |
+|------------------------------------|---------------------------------------------------------------|
+| [README](README.md)                | Назначение, обзор, состав модуля (данный файл)                |
+| [ARCHITECT.md](ARCHITECT.md)       | Архитектура — слои, AR, хранилища, схема DI, маршрутизация   |
+| [CAPABILITIES.md](CAPABILITIES.md) | Функциональные возможности и примеры API-запросов              |
+| [SCALING.md](SCALING.md)           | Масштабирование, индексы, производительность                   |
+| [ADMIN.md](ADMIN.md)               | Администрирование — ENV, миграции, мониторинг, команды        |
+| [TECH_DEBT.md](TECH_DEBT.md)       | Известные баги, техдолг, ограничения и планы по доработке      |
 
-| Метод            | Путь                                    | Назначение                                     |
-|------------------|-----------------------------------------|------------------------------------------------|
-| GET/POST         | `/admin/knowledge/categories`           | List / создание категорий                      |
-| GET/PATCH/DELETE | `/admin/knowledge/categories/{id}`      | Read / update / удаление категории             |
-| GET/POST         | `/admin/knowledge/documents`            | List / загрузка документа (`multipart file`)   |
-| GET/PATCH/DELETE | `/admin/knowledge/documents/{id}`       | Read / обновление метаданных / удаление        |
-| GET              | `/admin/knowledge/documents/{id}/file`  | Download оригинального файла                   |
-| PUT              | `/admin/knowledge/documents/{id}/file`  | Замена оригинального файла, инкремент revision |
-| GET/POST         | `/admin/knowledge/documents/{id}/parts` | List / создание категоризированных частей      |
-| GET/PATCH/DELETE | `/admin/knowledge/parts/{id}`           | Read / update / удаление части                 |
-| GET              | `/admin/knowledge/parts/{id}/content`   | Download вручную сохранённого текста части     |
+## Структура модуля
 
-Пример создания части (содержимое части записывается в файловую систему):
-
-```json
-{
-  "category_id": 2,
-  "title": "Размещение панелей на крыше",
-  "locator_type": "heading",
-  "locator": {"heading": "Варианты размещения"}
-}
+```
+backend/modules/knowledge/
+├── Module.php                        # Базовый модуль Yii (beforeAction → JSON-формат)
+├── config/
+│   ├── params.php                    # Параметры модуля (storagePath, maxFileSize из ENV)
+│   ├── routing.php                   # Маршруты (admin + internal)
+│   └── di.php                        # DI-контейнер (LocalFileStorage, KnowledgeCache, KnowledgeService)
+├── application/
+│   └── service/
+│       └── KnowledgeService.php      # Единый сервис: CRUD категорий, документов, частей, retrieve
+├── infrastructure/
+│   ├── migrations/
+│   │   └── m261113_000002_create_knowledge_tables.php  # Миграция БД (3 таблицы + индексы + FK)
+│   ├── persistence/
+│   │   ├── KnowledgeCategoryAR.php    # ActiveRecord категории
+│   │   ├── KnowledgeDocumentAR.php    # ActiveRecord документа
+│   │   └── KnowledgePartAR.php       # ActiveRecord части документа
+│   └── storage/
+│       ├── LocalFileStorage.php       # Файловое хранилище (загрузка/чтение/удаление файлов)
+│       └── KnowledgeCache.php         # Опциональное Redis-кэширование текста частей
+└── presentation/
+    └── controller/
+        ├── AdminKnowledgeController.php    # Админский API (CRUD категорий, документов, частей)
+        └── InternalKnowledgeController.php # Внутренний API (список категорий, retrieve, контент)
 ```
 
-Либо передайте `content` вместо использования локатора. Содержимое сохраняется как локальный текстовый файл и кэшируется в Redis при извлечении. Документ может иметь несколько частей из разных категорий, например один Markdown-файл может отдавать свой заголовок `Тарифы` под `10-energy`, а заголовок `Расчёт окупаемости` — под `00-reference`. Форматы локаторов: `heading` — `{"heading":"..."}`; `page_range` и `line_range` — `{"start":1,"end":5}`; `whole_file` не требует значений локатора.
+## Быстрый старт
 
-## Internal API
+### 1. Конфигурация через ENV
 
-- `GET /internal/v1/knowledge/categories`
-- `POST /internal/v1/knowledge/retrieve` с `{ "categorySlugs": ["10-energy"], "limit": 60 }`
-- `GET /internal/v1/knowledge/documents/{id}/file` — байты оригинального файла
-- `GET /internal/v1/knowledge/parts/{id}/content` — сохранённый текст части, или HTTP 204, если часть указывает на оригинальный файл
-- `POST /internal/v1/knowledge/parts/{id}/cache` — кэшировать извлечённое содержимое с revision документа/части
-
-Retrieval возвращает inline-содержимое, если оно уже есть в Redis (или если можно прочитать вручную сохранённый файл части). В противном случае возвращаются `contentUrl`, `documentUrl` и локатор. Python затем открывает источник через внутренний API, извлекает часть и просит PHP закэшировать её.
-
-## Безопасность и хранение
-
-- Оригинальные файлы не находятся под `web/` и не могут быть скачаны угадыванием публичного URL.
-- Storage-ключи генерируются на стороне сервера; имена файлов клиента — только метаданные.
-- Разрешённые расширения загрузки: `md`, `txt`, `pdf`, `docx`, `html`, `htm`.
-- Ограничение файла по умолчанию: 20 MiB; лимит вручную введённой текстовой части: 1 MiB; лимит inline-кэша Redis: 256 KiB.
-- Admin API защищён токеном. Настройте длинный случайный admin-токен.
-- Internal API использует отдельный сервисный токен. Смените значения по умолчанию из Compose перед развёртыванием в shared- или production-окружении.
-- Изменения revision документа и части приводят к новым ключам кэша, поэтому устаревший извлечённый текст не извлекается.
-
-## Локальный запуск
-
-Модуль предоставляет административный REST API; отдельная CRUD-страница во frontend пока не входит в этот MVP. Chat widget уже вызывает реальный `/generation/chat`, но создание/история сессий остаются локальной демо-реализацией.
-
-1. Скопируйте `.env.example` в `.env`, задайте `KNOWLEDGE_ADMIN_TOKEN`, `INTERNAL_SERVICE_TOKEN` (разные случайные секреты) и `AI_API_KEY`.
-2. Установите зависимости импортёра: `pip install -r services/generation/requirements.txt` (для тестов также установите `services/generation/requirements-dev.txt`; самому импортёру нужен только `httpx`).
-3. Соберите и запустите стек: `docker compose up -d --build`.
-4. Примените миграцию схемы, как показано ниже.
-5. Импортируйте начальный корпус скриптом ниже.
-
-Пример загрузки:
-
-```bash
-curl -X POST http://localhost:8080/admin/knowledge/documents \
-  -H "Authorization: Bearer $KNOWLEDGE_ADMIN_TOKEN" \
-  -F "title=Solar generation" \
-  -F "category_id=3" \
-  -F "status=published" \
-  -F "file=@./solar.md"
+```env
+KNOWLEDGE_STORAGE_PATH=/var/storage/knowledge
+KNOWLEDGE_MAX_FILE_SIZE=20971520
+KNOWLEDGE_MAX_PART_SIZE=1048576
+KNOWLEDGE_REDIS_TTL=3600
+KNOWLEDGE_MAX_INLINE_PART_BYTES=262144
+REDIS_HOST=redis
+REDIS_PORT=6379
 ```
 
-Пример запроса в чат (браузер вызывает тот же endpoint через `/api`):
+### 2. Миграция БД
 
 ```bash
-curl -X POST http://localhost:8080/generation/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question":"Можно ли поставить панели на фасад?","debug":true}'
-```
-
-## Миграция
-
-```bash
+php yii migrate --migrationPath=@modules/knowledge/infrastructure/migrations
+# или через Docker:
 docker compose exec php-fpm php yii migrate --interactive=0
 ```
 
-## Импорт начального корпуса
+### 3. Создание категории (админка)
 
-Из корня репозитория после запуска контейнеров. Замените плейсхолдер токена значением `KNOWLEDGE_ADMIN_TOKEN` из `.env` (того же файла, который читает Compose):
+```http
+POST /admin/knowledge/categories
+Content-Type: application/json
 
-```bash
-python services/generation/scripts/import_knowledge_base.py knowledge-base \
-  --base-url http://localhost:8080 \
-  --token "<KNOWLEDGE_ADMIN_TOKEN>" \
-  --publish --skip-existing
+{
+    "name": "Продукты",
+    "slug": "products",
+    "description": "Информация о продуктах компании",
+    "sort_order": 10,
+    "is_active": true
+}
 ```
 
-Три исходные папки становятся категориями (`Справочные материалы`, `Энергетика`, `Продукты`), и каждый Markdown-файл получает часть `whole_file`. Импортёр также принимает ZIP с одной обёрточной папкой или без неё. Добавьте `--skip-existing`, чтобы пропускать файлы с совпадающей контрольной суммой SHA-256. Администраторы могут разбивать документы на отдельные части и переназначать категории через API.
+### 4. Загрузка документа (multipart)
+
+```http
+POST /admin/knowledge/documents
+Authorization: Bearer <admin-token>
+Content-Type: multipart/form-data
+
+file: @document.pdf
+title: "Инструкция по настройке"
+categoryId: 1
+status: published
+```
+
+### 5. Получение знаний (внутренний API)
+
+```http
+POST /internal/v1/knowledge/retrieve
+Content-Type: application/json
+
+{
+    "categorySlugs": ["products"],
+    "limit": 50
+}
+```
+
+## Зависимости
+
+- **Yii Framework** — базовый фреймворк
+- **MySQL / MariaDB** — через Yii ActiveRecord
+- **Redis** (опционально) — кэширование контента частей
+- **core** — EntityNotFoundException, FileStorageException, ValidationException, BaseController
+- **finfo** (опционально) — определение MIME-типа загружаемых файлов
+- **OpenAPI** — аннотации для генерации схемы
+
+---
