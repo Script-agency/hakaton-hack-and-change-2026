@@ -66,6 +66,7 @@ services:
     volumes:
       - backend_runtime:/app/runtime
       # Mount source for development (hot-reload PHP changes)
+      - ./backend/storage:/app/storage:delegated
       - ./backend/web:/app/web:delegated
       - ./backend/config:/app/config:delegated
       - ./backend/core:/app/core:delegated
@@ -91,6 +92,51 @@ services:
       - ./backend/web:/app/web:ro
     depends_on:
       - php-fpm
+    networks:
+      - hackaton-net
+
+  # -------------------- Python Generation Service --------------------
+  generation:
+    build:
+      context: .
+      dockerfile: services/generation/Dockerfile
+    container_name: hackaton-generation
+    restart: unless-stopped
+    environment:
+      # PHP backend URL inside Docker network
+      PHP_INTERNAL_API_URL: ${PHP_INTERNAL_API_URL:-http://nginx-backend}
+
+      # Auth token for internal service calls (MUST be set in production)
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-}
+
+      # HTTP timeouts
+      PHP_HTTP_TIMEOUT: ${PHP_HTTP_TIMEOUT:-60}
+      PHP_AI_GATEWAY_TIMEOUT: ${PHP_AI_GATEWAY_TIMEOUT:-180}
+
+      # Generation / knowledge parameters
+      GENERATION_TOP_K: ${GENERATION_TOP_K:-6}
+      GENERATION_MAX_CONTEXT_CHARS: ${GENERATION_MAX_CONTEXT_CHARS:-24000}
+      GENERATION_CHUNK_SIZE_CHARS: ${GENERATION_CHUNK_SIZE_CHARS:-3500}
+      GENERATION_CHUNK_OVERLAP_CHARS: ${GENERATION_CHUNK_OVERLAP_CHARS:-350}
+      GENERATION_KNOWLEDGE_LIMIT: ${GENERATION_KNOWLEDGE_LIMIT:-30}
+    ports:
+      - "${GENERATION_PORT:-8000}:8000"
+    volumes:
+      - ./services/generation/scripts:/app/scripts:ro
+      - ./services/generation/data:/app/data:ro
+    depends_on:
+      nginx-backend:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - hackaton-net
 
