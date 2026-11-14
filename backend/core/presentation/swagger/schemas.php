@@ -129,3 +129,124 @@ class MainSchemasDefinitions
 class LeadSchemasDefinitions
 {
 }
+
+/**
+ * @OA\Schema(
+ *     schema="KnowledgeCategory",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", maxLength=255, example="Инструкции"),
+ *     @OA\Property(property="slug", type="string", maxLength=255, example="instructions"),
+ *     @OA\Property(property="description", type="string", nullable=true, example="Внутренние инструкции и регламенты"),
+ *     @OA\Property(property="is_active", type="boolean", example=true),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-15T10:00:00+00:00"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true, example="2025-01-15T10:00:00+00:00")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="CreateKnowledgeCategoryRequest",
+ *     required={"name", "slug"},
+ *     @OA\Property(property="name", type="string", maxLength=255, example="Инструкции"),
+ *     @OA\Property(property="slug", type="string", maxLength=255, pattern="^[a-z0-9\-_]+$", example="instructions"),
+ *     @OA\Property(property="description", type="string", nullable=true),
+ *     @OA\Property(property="is_active", type="boolean", nullable=true, example=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="UpdateKnowledgeCategoryRequest",
+ *     @OA\Property(property="name", type="string", maxLength=255, nullable=true),
+ *     @OA\Property(property="slug", type="string", maxLength=255, nullable=true),
+ *     @OA\Property(property="description", type="string", nullable=true),
+ *     @OA\Property(property="is_active", type="boolean", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="KnowledgeDocument",
+ *     @OA\Property(property="id", type="integer", example=42),
+ *     @OA\Property(property="category_id", type="integer", nullable=true, example=1),
+ *     @OA\Property(property="title", type="string", example="Политика возврата"),
+ *     @OA\Property(property="description", type="string", nullable=true),
+ *     @OA\Property(property="filename", type="string", example="policy.pdf"),
+ *     @OA\Property(property="mime_type", type="string", example="application/pdf"),
+ *     @OA\Property(property="size", type="integer", example=204800),
+ *     @OA\Property(property="status", type="string", enum={"draft","processing","ready","failed"}, example="ready"),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="KnowledgeDocumentList",
+ *     @OA\Property(
+ *         property="items",
+ *         type="array",
+ *         @OA\Items(ref="#/components/schemas/KnowledgeDocument")
+ *     ),
+ *     @OA\Property(
+ *         property="_meta",
+ *         type="object",
+ *         @OA\Property(property="total", type="integer", example=125)
+ *     )
+ * )
+ *
+ * @OA\Schema(
+ *     schema="UpdateKnowledgeDocumentRequest",
+ *     @OA\Property(property="categoryId", type="integer", nullable=true),
+ *     @OA\Property(property="title", type="string", maxLength=255, nullable=true),
+ *     @OA\Property(property="description", type="string", nullable=true),
+ *     @OA\Property(property="status", type="string", enum={"draft","processing","ready","failed"}, nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="KnowledgePart",
+ *     @OA\Property(property="id", type="integer", example=7),
+ *     @OA\Property(property="document_id", type="integer", example=42),
+ *     @OA\Property(property="title", type="string", nullable=true, example="Раздел 1"),
+ *     @OA\Property(property="position", type="integer", example=1),
+ *     @OA\Property(property="content", type="string", nullable=true),
+ *     @OA\Property(property="revision", type="integer", example=3),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="CreateKnowledgePartRequest",
+ *     required={"content"},
+ *     @OA\Property(property="title", type="string", maxLength=255, nullable=true),
+ *     @OA\Property(property="content", type="string"),
+ *     @OA\Property(property="position", type="integer", nullable=true, example=1)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="UpdateKnowledgePartRequest",
+ *     @OA\Property(property="title", type="string", maxLength=255, nullable=true),
+ *     @OA\Property(property="content", type="string", nullable=true),
+ *     @OA\Property(property="position", type="integer", nullable=true)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="RetrieveRequest",
+ *     @OA\Property(
+ *         property="categorySlugs",
+ *         type="array",
+ *         nullable=true,
+ *         @OA\Items(type="string"),
+ *         example={"instructions","faq"}
+ *     ),
+ *     @OA\Property(property="limit", type="integer", default=50, minimum=1, maximum=500, example=50)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="CachePartRequest",
+ *     required={"content"},
+ *     @OA\Property(property="content", type="string", description="Текст части"),
+ *     @OA\Property(property="documentRevision", type="integer", default=0, example=1),
+ *     @OA\Property(property="partRevision", type="integer", default=0, example=1)
+ * )
+ *
+ * @OA\Schema(
+ *     schema="CachePartResponse",
+ *     @OA\Property(property="cached", type="boolean", example=true)
+ * )
+ */
+class KnowledgeSchemasDefinitions
+{
+}
