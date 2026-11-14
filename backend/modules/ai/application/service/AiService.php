@@ -13,24 +13,17 @@ use modules\ai\domain\exception\AiRateLimitException;
 use modules\ai\domain\exception\AiTimeoutException;
 use modules\ai\domain\exception\AiTransportException;
 use modules\ai\infrastructure\AiClient;
-use modules\ai\infrastructure\AiCookieStorage;
+use modules\ai\infrastructure\AiSettingStorage;
 use modules\ai\infrastructure\persistence\AiAuditLogAR;
+use Throwable;
+use Yii;
 
 class AiService
 {
     public function __construct(
-        private readonly AiCookieStorage $cookieStorage,
+        private readonly AiSettingStorage $settingStorage,
         private readonly AiClient $client,
     ) {
-    }
-
-    /**
-     * Сохраняет настройки AI в cookie.
-     */
-    public function saveSettings(string $baseUrl, string $apiKey, string $model): void
-    {
-        $settings = new AiSettingsDto($baseUrl, $apiKey, $model);
-        $this->cookieStorage->saveSettings($settings);
     }
 
     /**
@@ -38,12 +31,12 @@ class AiService
      */
     public function getSettings(): AiSettingsDto
     {
-        return $this->cookieStorage->getSettings();
+        return $this->settingStorage->getSettings();
     }
 
     public function hasSettings(): bool
     {
-        return $this->cookieStorage->hasSettings();
+        return $this->settingStorage->hasSettings();
     }
 
     /**
@@ -53,10 +46,10 @@ class AiService
      */
     public function getSettingsInfo(): array
     {
-        $settings = $this->cookieStorage->getSettings();
+        $settings = $this->settingStorage->getSettings();
 
         return [
-            'hasSettings' => $this->cookieStorage->hasSettings(),
+            'hasSettings' => $this->settingStorage->hasSettings(),
             'model'       => $settings->model !== '' ? $settings->model : null,
             'baseUrl'     => $settings->baseUrl !== '' ? $settings->baseUrl : null,
         ];
@@ -79,7 +72,7 @@ class AiService
     /** @param array<int, array<string, mixed>> $messages */
     public function chat(string $systemPrompt, array $messages, ?string $modelOverride = null): AiResponseDto
     {
-        $settings = $this->cookieStorage->getSettings();
+        $settings = $this->settingStorage->getSettings();
 
         if ($modelOverride !== null) {
             $settings = new AiSettingsDto(

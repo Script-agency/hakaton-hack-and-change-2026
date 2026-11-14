@@ -64,6 +64,10 @@ services:
       COOKIE_VALIDATION_KEY: "docker-dev-key-change-in-production"
       APP_URL: "http://localhost:8080"
       FRONTEND_URL: "http://localhost"
+
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
     volumes:
       - backend_runtime:/app/runtime
       # Mount source for development (hot-reload PHP changes)
