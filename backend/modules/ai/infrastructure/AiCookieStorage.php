@@ -41,8 +41,8 @@ class AiCookieStorage
 
         return new AiSettingsDto(
             baseUrl: $cookie->baseUrl !== '' ? $cookie->baseUrl : $this->baseSettings->baseUrl,
-            apiKey:  $cookie->apiKey !== ''  ? $cookie->apiKey  : $this->baseSettings->apiKey,
-            model:   $cookie->model !== ''   ? $cookie->model   : $this->baseSettings->model,
+            apiKey:  $cookie->apiKey !== '' ? $cookie->apiKey : $this->baseSettings->apiKey,
+            model:   $cookie->model !== '' ? $cookie->model : $this->baseSettings->model,
         );
     }
 

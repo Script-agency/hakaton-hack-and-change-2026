@@ -9,4 +9,5 @@ declare(strict_types=1);
 return [
     'core\\infrastructure\\migrations',
     'modules\\lead\\infrastructure\\migrations',
+    'modules\\knowledge\\infrastructure\\migrations',
 ];

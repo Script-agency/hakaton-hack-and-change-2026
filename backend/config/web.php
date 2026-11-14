@@ -12,6 +12,8 @@ $container      = __DIR__ . '/container.php';
 $diConfigs          = [
     __DIR__ . '/../modules/ai/config/di.php',
     __DIR__ . '/../modules/lead/config/di.php',
+    __DIR__ . '/../modules/knowledge/config/di.php',
+    __DIR__ . '/../modules/generation/config/di.php',
 ];
 
 $config = [
@@ -84,6 +86,8 @@ $config = [
             'rules' =>  array_merge(
                 require __DIR__ . '/../modules/ai/config/routing.php',
                 require __DIR__ . '/../modules/lead/config/routing.php',
+                require __DIR__ . '/../modules/knowledge/config/routing.php',
+                require __DIR__ . '/../modules/generation/config/routing.php',
                 [
                     // Swagger documentation
                     'docs/swagger/json'             => 'swagger/json',
