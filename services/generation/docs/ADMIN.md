@@ -78,7 +78,7 @@ curl -X GET http://localhost:8080/internal/v1/knowledge/categories \
 ### Проверка AI Gateway
 
 ```bash
-curl -X POST http://localhost:8080/internal/v1/ai/chat \
+curl -X POST http://localhost:8080/ai/chat \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{

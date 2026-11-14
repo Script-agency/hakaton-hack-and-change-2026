@@ -71,7 +71,7 @@ Retriever --> Service: context_str, sources[], debug
 == F. Вызов AI ==
 Service -> Service: Собираем system_prompt\n(SYSTEM_PROMPT + <knowledge_context>)
 Service -> PhpClient: chat(system_prompt, messages)
-PhpClient -> AiGateway: POST /interna/v1/ai/chat
+PhpClient -> AiGateway: POST /ai/chat
 AiGateway --> PhpClient: {content, finishReason, usage}
 PhpClient --> Service: AI result
 

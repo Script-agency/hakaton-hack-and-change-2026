@@ -61,6 +61,6 @@ class PHPClient:
     async def chat(self, system_prompt: str, messages: list[dict[str, str]]) -> dict[str, Any]:
         return await self._json(
             "POST",
-            "/internal/v1/ai/chat",
+            "/ai/chat",
             {"systemPrompt": system_prompt, "messages": messages},
         )

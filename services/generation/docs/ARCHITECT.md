@@ -155,13 +155,13 @@
 
 Асинхронный HTTP-клиент для взаимодействия с PHP-бэкендом.
 
-| Метод            | PHP-эндпоинт                   | Описание                                           |
-|-------------------|--------------------------------|-----------------------------------------------------|
+| Метод            | PHP-эндпоинт                  | Описание                                           |
+|-------------------|-------------------------------|-----------------------------------------------------|
 | `categories()`    | `GET /internal/v1/knowledge/categories` | Список активных категорий               |
-| `retrieve()`      | `POST /internal/v1/knowledge/retrieve`  | Получение документов по категориям       |
-| `fetch_bytes()`   | `GET {contentUrl / documentUrl}`        | Загрузка бинарного контента              |
+| `retrieve()`      | `POST /internal/v1/knowledge/retrieve` | Получение документов по категориям       |
+| `fetch_bytes()`   | `GET {contentUrl / documentUrl}`       | Загрузка бинарного контента              |
 | `cache_part()`    | `POST /internal/v1/knowledge/parts/{id}/cache` | Кэширование извлечённого текста |
-| `chat()`          | `POST /internal/v1/ai/chat`             | Вызов AI Gateway                        |
+| `chat()`          | `POST /ai/chat`             | Вызов AI Gateway                        |
 
 **Особенности:**
 - Таймаут по умолчанию — `max(PHP_HTTP_TIMEOUT, PHP_AI_GATEWAY_TIMEOUT)` (180 сек)
@@ -215,7 +215,7 @@ FastAPI → GenerationService.answer()
            │    ├→ _split_chunks() → BM25 → top_k
            │    └→ PHPClient.cache_part() (опционально)
            ├→ Сборка system_prompt с контекстом
-           ├→ PHPClient.chat() → PHP: POST /internal/v1/ai/chat → AI Provider
+           ├→ PHPClient.chat() → PHP: POST /ai/chat → AI Provider
            └→ Ответ {answer, sources, routing, debug?}
 ```
 
