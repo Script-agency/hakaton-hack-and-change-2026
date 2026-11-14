@@ -17,5 +17,9 @@ return [
     'lead' => [
         'class' => 'modules\lead\Module',
         'controllerNamespace' => 'modules\lead\presentation\controller',
+    'knowledge' => [
+        'class' => 'modules\\knowledge\\Module',
+        'controllerNamespace' => 'modules\\knowledge\\presentation\\controller',
+    ],
     ],
 ];
