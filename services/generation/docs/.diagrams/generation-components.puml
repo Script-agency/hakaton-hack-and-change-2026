@@ -1,0 +1,65 @@
+@startuml generation-components
+' Component diagram: structure and external dependencies
+
+skinparam {
+  BackgroundColor #F8F9FA
+  ComponentBorderColor #2E4053
+  ComponentFontColor #1A1A2E
+  ArrowColor #2E86C1
+}
+
+title "Generation Service — Component Diagram"
+
+package "Python Generation Service\n(FastAPI :8000)" as PyService {
+  component "FastAPI App\nmain.py" as FastApi
+  component "GenerationService\norchestration\ngeneration_service.py" as GenSvc
+  component "KnowledgeRouter\nknowledge/router.py" as Router
+  component "KnowledgeRetriever\nknowledge/retriever.py" as Retriever
+  component "Extractors\nknowledge/extractors.py" as Extractors
+  component "PHPClient\ninfrastructure\nphp_client.py" as PhpClient
+  component "Config\nconfig.py" as Config
+
+  FastApi --> GenSvc : "answer(request)"
+  GenSvc --> Router : "route()"
+  GenSvc --> Retriever : "retrieve()"
+  GenSvc --> PhpClient : "chat()"
+  Retriever --> PhpClient : "retrieve() /\nfetch_bytes() /\ncache_part()"
+  Retriever --> Extractors : "extract_document() /\nextract_part()"
+}
+
+package "Внешние зависимости" as External {
+  component "PHP Backend (Yii)" as PhpBackend {
+    component "GenerationController\nPOST /generation/chat" as PhpCtrl
+    component "InternalKnowledgeController\nGET /interna/v1/knowledge/categories\nPOST /interna/v1/knowledge/retrieve\nGET .../file\nPOST .../cache" as KnowCtrl
+    component "AI Gateway\nPOST /interna/v1/ai/chat" as AiGw
+  }
+
+  component "MySQL / MariaDB\n(категории, документы, части)" as MySQL
+  component "Redis\n(кэш контента частей)" as Redis
+  component "OpenAI-совместимый API\n(LLM-провайдер)" as LLM
+
+  PhpCtrl --> FastApi : "HTTP POST /v1/generation/chat"
+  PhpClient --> KnowCtrl : "HTTP internal API"
+  PhpClient --> AiGw : "HTTP /interna/v1/ai/chat"
+  KnowCtrl --> MySQL : "ActiveRecord"
+  KnowCtrl --> Redis : "KnowledgeCache"
+  AiGw --> LLM : "POST /chat/completions"
+}
+
+package "Библиотеки Python" as Libs {
+  component "FastAPI" as _FastApi
+  component "httpx" as _Httpx
+  component "rank_bm25" as _BM25
+  component "pypdf" as _Pypdf
+  component "python-docx" as _Docx
+  component "BeautifulSoup4" as _Bs4
+}
+
+FastApi --> _FastApi
+PhpClient --> _Httpx : "Async HTTP"
+Retriever --> _BM25 : "BM25Okapi"
+Extractors --> _Pypdf : "PDF parsing"
+Extractors --> _Docx : "DOCX parsing"
+Extractors --> _Bs4 : "HTML parsing"
+
+@enduml
