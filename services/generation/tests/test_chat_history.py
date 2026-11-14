@@ -50,6 +50,7 @@ def test_chat_history_envelope_is_accepted_and_metadata_is_not_forwarded():
             ],
         },
     })
+    assert payload.history_message_count == 2
     php = FakePHP()
     service = GenerationService(php, top_k=2, max_context_chars=4000)
 

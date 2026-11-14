@@ -77,7 +77,7 @@ def extract_part(text: str, extension: str, locator_type: str, locator: dict[str
                     start_index = index
                     break
         if start_index is None:
-            raise ValueError(f"Heading not found in source file: {locator.get('heading')}")
+            raise ValueError("Heading not found in source file")
         end_index = len(lines)
         for index in range(start_index + 1, len(lines)):
             match = re.match(r"^(#{1,6})\s+", lines[index].strip())

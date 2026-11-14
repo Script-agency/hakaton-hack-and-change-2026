@@ -125,11 +125,17 @@ services:
       GENERATION_CHUNK_SIZE_CHARS: ${GENERATION_CHUNK_SIZE_CHARS:-3500}
       GENERATION_CHUNK_OVERLAP_CHARS: ${GENERATION_CHUNK_OVERLAP_CHARS:-350}
       GENERATION_KNOWLEDGE_LIMIT: ${GENERATION_KNOWLEDGE_LIMIT:-30}
+      GENERATION_LOG_FILE: /app/logs/generation.log
+      GENERATION_LOG_LEVEL: INFO
+      GENERATION_LOG_MAX_BYTES: 10485760
+      GENERATION_LOG_BACKUP_COUNT: 10
+
     ports:
       - "${GENERATION_PORT:-8000}:8000"
     volumes:
       - ./services/generation/scripts:/app/scripts:ro
       - ./services/generation/data:/app/data:ro
+      - ./services/generation/logs:/app/logs
     depends_on:
       nginx-backend:
         condition: service_started

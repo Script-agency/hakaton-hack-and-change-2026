@@ -33,9 +33,8 @@ The ZIP or directory must contain `category-folder/document.ext` (a single wrapp
 ## Tests
 
 ```bash
-pytest
+python -m pytest
 ```
-
 
 ## Chat history input
 
@@ -65,3 +64,12 @@ The current `question` is appended as the last user message unless it is already
 the last message in the supplied history. The latest 20 messages are sent to the
 AI Gateway. The previous flat `messages: [{role, content}]` input remains supported;
 when both forms are supplied, `chat_messages.messages` takes precedence.
+
+## Structured JSON logging
+
+The service writes technical JSON logs to `/app/logs/generation.log`, with 10 MiB
+rotation and 10 backups. In Docker, mount `./services/generation/logs:/app/logs`
+and set the `GENERATION_LOG_*` environment variables shown in
+[the logging guide](docs/LOGGING.md). The logger records technical metadata only;
+question/answer text, chat contents, prompts, document contents and credentials
+are not written to logs.

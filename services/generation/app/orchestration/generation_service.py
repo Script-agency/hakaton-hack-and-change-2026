@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
+from time import perf_counter
 from typing import Any
 
 from app.infrastructure.php_client import PHPClient
 from app.knowledge.retriever import KnowledgeRetriever
 from app.knowledge.router import KnowledgeRouter
 from app.schemas import GenerationRequest
+
+logger = logging.getLogger("generation.orchestration")
 
 SYSTEM_PROMPT = """Ты — консультант по решениям в области энергетики и учёта электроэнергии.
 
@@ -26,11 +30,21 @@ class GenerationService:
         self.retriever = KnowledgeRetriever(php, top_k, max_context_chars, candidate_limit, chunk_size_chars, chunk_overlap_chars)
 
     async def answer(self, request: GenerationRequest) -> dict[str, Any]:
+        started = perf_counter()
         categories = await self.php.categories()
+        logger.info(
+            "Knowledge categories loaded",
+            extra={"event": "generation_categories_loaded", "category_count": len(categories)},
+        )
         selected_categories, routing = self.router.route(
             request.question,
             categories,
             request.category_slugs,
+        )
+        logger.info(
+            "Knowledge category routing completed",
+            extra={"event": "generation_routing_completed", "routing_mode": routing.get("mode"),
+                   "selected_category_count": len(selected_categories), "category_count": len(categories)},
         )
         context, sources, retrieval_debug = await self.retriever.retrieve(
             request.question, selected_categories, request.top_k
@@ -54,9 +68,19 @@ class GenerationService:
             messages.append({"role": "user", "content": request.question})
         # Keep only the latest context window; current question is always retained.
         messages = messages[-20:]
+        logger.info(
+            "Generation context assembled",
+            extra={"event": "generation_context_assembled", "context_chars": len(context),
+                   "system_prompt_chars": len(system_prompt), "message_count": len(messages),
+                   "source_count": len(sources)},
+        )
         ai_result = await self.php.chat(system_prompt, messages)
         answer = str(ai_result.get("content", "")).strip()
         if not answer:
+            logger.error(
+                "AI Gateway returned an empty answer",
+                extra={"event": "generation_empty_answer", "source_count": len(sources)},
+            )
             raise RuntimeError("AI Gateway returned an empty answer")
 
         response: dict[str, Any] = {
@@ -69,4 +93,9 @@ class GenerationService:
                 "retrieval": retrieval_debug,
                 "ai": {"finishReason": ai_result.get("finishReason"), "usage": ai_result.get("usage")},
             }
+        logger.info(
+            "Generation completed successfully",
+            extra={"event": "generation_completed", "duration_ms": round((perf_counter() - started) * 1000, 2),
+                   "answer_chars": len(answer), "source_count": len(sources)},
+        )
         return response

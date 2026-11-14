@@ -36,6 +36,11 @@ class GenerationRequest(BaseModel):
     top_k: int | None = Field(default=None, ge=1, le=12)
     debug: bool = False
 
+    @property
+    def history_message_count(self) -> int:
+        history = self.chat_messages.messages if self.chat_messages is not None else self.messages
+        return len(history)
+
 
 class Source(BaseModel):
     id: int

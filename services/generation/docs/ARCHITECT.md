@@ -55,7 +55,7 @@
 | `PHPServiceError`        | 502      | PHP-бэкенд вернул ошибку или невалидный ответ   |
 | `httpx.TimeoutException` | 504      | Таймаут внутреннего запроса к PHP               |
 | `HTTPException`          | (проброс)| Известные HTTP-ошибки (400, 404 и т.д.)         |
-| `Exception`              | 500      | Внутренняя ошибка (логируется в stdout)          |
+| `Exception`              | 500      | Внутренняя ошибка (логируется в файл и stdout)          |
 
 ### GenerationService (`app/orchestration/generation_service.py`)
 
@@ -68,7 +68,7 @@
 4. Сборка system_prompt: базовый SYSTEM_PROMPT + `<knowledge_context>` с найденными источниками
 5. Выбор истории: `chat_messages.messages` (при наличии) или legacy `messages`; добавление текущего `question`, если его ещё нет последним сообщением; ограничение до последних 20 сообщений.
 6. Вызов AI Gateway через `php.chat(system_prompt, messages)`
-6. Формирование ответа: `{answer, sources, routing, debug?}`
+7. Формирование ответа: `{answer, sources, routing, debug?}`
 
 **Конфигурация:**
 - `SYSTEM_PROMPT` — жёстко задан в коде. Инструктирует модель отвечать на русском, использовать только контекст, не выдумывать, не смешивать предположения с фактами.

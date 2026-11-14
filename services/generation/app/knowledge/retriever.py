@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 import re
+from time import perf_counter
 from typing import Any
 
 from rank_bm25 import BM25Okapi
@@ -8,11 +10,19 @@ from rank_bm25 import BM25Okapi
 from app.infrastructure.php_client import PHPClient
 from app.knowledge.extractors import extract_document, extract_part
 
+logger = logging.getLogger("generation.retriever")
 TOKEN_RE = re.compile(r"[a-zа-яё0-9]+", re.IGNORECASE)
 
 
 def tokenize(text: str) -> list[str]:
     return [token.casefold() for token in TOKEN_RE.findall(text) if len(token) > 1]
+
+
+def _safe_part_id(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 class KnowledgeRetriever:
@@ -55,15 +65,29 @@ class KnowledgeRetriever:
     async def retrieve(
         self, query: str, category_slugs: list[str], top_k: int | None = None
     ) -> tuple[str, list[dict[str, Any]], dict[str, Any]]:
+        started = perf_counter()
+        logger.info(
+            "Knowledge retrieval started",
+            extra={"event": "knowledge_retrieval_started", "category_count": len(category_slugs),
+                   "selected_category_count": len(category_slugs), "top_k": top_k or self.top_k},
+        )
         items = await self.php.retrieve(category_slugs, self.candidate_limit)
+        logger.info(
+            "Knowledge candidates retrieved",
+            extra={"event": "knowledge_candidates_retrieved", "candidate_parts": len(items)},
+        )
         hydrated: list[dict[str, Any]] = []
         source_text_cache: dict[tuple[int, int], str] = {}
         failures: list[dict[str, Any]] = []
+        inline_cache_hits = 0
+        downloaded_documents = 0
 
-        for item in items:
+        for item_index, item in enumerate(items):
             try:
                 content = item.get("content")
                 came_from_inline_cache = isinstance(content, str) and bool(content.strip())
+                if came_from_inline_cache:
+                    inline_cache_hits += 1
                 if not came_from_inline_cache:
                     # Explicitly categorized part can either be a locally stored text part
                     # or a locator into the original file. Both are served by PHP internal APIs.
@@ -79,6 +103,7 @@ class KnowledgeRetriever:
                             source_bytes, _ = await self.php.fetch_bytes(str(item["documentUrl"]))
                             full_text = extract_document(source_bytes, str(item.get("extension", "")))
                             source_text_cache[source_key] = full_text
+                            downloaded_documents += 1
                         content = extract_part(
                             full_text,
                             str(item.get("extension", "")),
@@ -89,14 +114,32 @@ class KnowledgeRetriever:
                     if not came_from_inline_cache:
                         try:
                             await self.php.cache_part(item, str(content))
-                        except Exception:
-                            # Cache is only an optimization. A failed write must not block an answer.
-                            pass
+                        except Exception as exc:
+                            # Cache is an optimization; a failed write must not block an answer.
+                            logger.warning(
+                                "Could not cache extracted knowledge part; continuing without cache",
+                                extra={"event": "knowledge_part_cache_failed", "item_index": item_index,
+                                       "part_id": _safe_part_id(item.get("id")), "exception_type": type(exc).__name__},
+                            )
                     hydrated.append({**item, "content": str(content).strip()})
             except Exception as exc:
                 failures.append({"partId": item.get("id"), "reason": str(exc)[:250]})
+                logger.exception(
+                    "Knowledge part could not be loaded",
+                    extra={"event": "knowledge_part_load_failed", "item_index": item_index,
+                           "part_id": _safe_part_id(item.get("id")), "exception_type": type(exc).__name__},
+                )
 
         if not hydrated:
+            elapsed = round((perf_counter() - started) * 1000, 2)
+            logger.warning(
+                "Knowledge retrieval completed without usable parts",
+                extra={"event": "knowledge_retrieval_completed", "candidate_parts": len(items),
+                       "loaded_parts": 0, "chunk_count": 0, "selected_parts": 0,
+                       "failed_parts": len(failures), "duration_ms": elapsed,
+                       "downloaded_documents": downloaded_documents,
+                       "inline_cache_hits": inline_cache_hits},
+            )
             return "", [], {"candidateParts": len(items), "loadedParts": 0, "chunkCount": 0, "failedParts": failures}
 
         chunked: list[dict[str, Any]] = []
@@ -104,6 +147,7 @@ class KnowledgeRetriever:
             for chunk_index, chunk_text in enumerate(self._split_chunks(part["content"])):
                 chunked.append({**part, "content": chunk_text, "chunkIndex": chunk_index})
 
+        ranking_started = perf_counter()
         corpus = [tokenize(f"{part.get('title', '')} {part.get('description') or ''} {part.get('documentTitle', '')} {part['content']}") for part in chunked]
         query_tokens = tokenize(query)
         scores = BM25Okapi(corpus).get_scores(query_tokens) if query_tokens and any(corpus) else [0.0] * len(chunked)
@@ -112,6 +156,7 @@ class KnowledgeRetriever:
         if not any(score > 0 for score, _ in ranked):
             ranked = [(0.0, part) for part in chunked]
         selected = [part for _, part in ranked[: (top_k or self.top_k)]]
+        ranking_ms = round((perf_counter() - ranking_started) * 1000, 2)
 
         contexts: list[str] = []
         sources: list[dict[str, Any]] = []
@@ -152,6 +197,25 @@ class KnowledgeRetriever:
             "failedParts": failures,
             "contextChars": used_chars,
         }
+        elapsed = round((perf_counter() - started) * 1000, 2)
+        logger.info(
+            "Knowledge retrieval completed",
+            extra={"event": "knowledge_retrieval_completed", "candidate_parts": len(items),
+                   "loaded_parts": len(hydrated), "chunk_count": len(chunked),
+                   "selected_parts": len(sources), "failed_parts": len(failures),
+                   "context_chars": used_chars, "duration_ms": elapsed,
+                   "downloaded_documents": downloaded_documents,
+                   "inline_cache_hits": inline_cache_hits,
+                   "ranking_duration_ms": ranking_ms,
+                   "query_token_count": len(query_tokens),
+                   "cache_hit": inline_cache_hits > 0},
+        )
+        logger.debug(
+            "Knowledge retrieval performance details",
+            extra={"event": "knowledge_retrieval_performance", "duration_ms": elapsed,
+                   "downloaded_documents": downloaded_documents, "inline_cache_hits": inline_cache_hits,
+                   "ranking_duration_ms": ranking_ms},
+        )
         return "\n\n---\n\n".join(contexts), sources, debug
 
     @staticmethod
