@@ -31,7 +31,9 @@ class UpdateLeadStatusHandler
         $lead = $this->leadRepository->findById($command->leadId);
 
         $lead->changeStatus($command->status);
-        if ($command->managerNote !== null) $lead->changeManagerNote($command->managerNote);
+        if ($command->managerNote !== null) {
+            $lead->changeManagerNote($command->managerNote);
+        }
 
         $this->transactionManager->run(function () use ($lead): void {
             $this->leadRepository->save($lead);

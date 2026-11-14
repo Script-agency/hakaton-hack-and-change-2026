@@ -21,7 +21,6 @@ use yii\httpclient\Response;
 
 class AiClient
 {
-
     private int $timeout;
     private int $connectTimeout;
     private int $maxRetries;

@@ -94,7 +94,7 @@ class LeadDto implements JsonSerializable
             'summary'     => $this->summary,
             'messages'    => $this->messages,
             'status'      => $this->status,
-            'manager_note'=> $this->managerNote,
+            'manager_note' => $this->managerNote,
             'created_at'  => $this->createdAt,
             'updated_at'  => $this->updatedAt,
         ];
