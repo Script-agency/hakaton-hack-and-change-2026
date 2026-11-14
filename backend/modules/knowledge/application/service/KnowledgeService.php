@@ -128,7 +128,7 @@ final class KnowledgeService
             $query->innerJoin(KnowledgePartAR::tableName() . ' p_filter', 'p_filter.document_id = d.id')
                 ->andWhere(['p_filter.category_id' => (int)$filters['category_id']]);
         }
-        $total = (int)(clone $query)->distinct()->count('d.id');
+        $total = (int)(clone $query)->distinct()->count();
         $limit = max(1, min(100, (int)($filters['limit'] ?? 20)));
         $offset = max(0, (int)($filters['offset'] ?? 0));
         $rows = $query->select('d.*')->distinct()->orderBy(['d.updated_at' => SORT_DESC])->limit($limit)->offset($offset)->all();
