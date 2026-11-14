@@ -56,6 +56,13 @@ $this->title = 'Admin Center';
                 </button>
             </nav>
         </div>
+
+        <div class="p-4 border-t border-slate-800/80 space-y-2">
+            <div class="flex items-center gap-2 text-xs text-slate-400 bg-dark-800/70 px-3 py-2 rounded-lg border border-slate-800">
+                <i class="fa-solid fa-wheelchair-alt w-5 text-center"></i>
+                <span class="truncate">Помним, что это прототип ♥</span>
+            </div>
+        </div>
     </aside>
 
     <!-- Основной контент -->
