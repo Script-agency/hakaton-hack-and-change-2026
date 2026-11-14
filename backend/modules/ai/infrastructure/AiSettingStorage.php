@@ -29,10 +29,6 @@ class AiSettingStorage
      */
     public function getSettings(): AiSettingsDto
     {
-        Yii::warning("КАК ТЫ ЗАЕБАЛ");
-        Yii::warning($this->baseSettings->baseUrl);
-        Yii::warning($this->baseSettings->model);
-
         return new AiSettingsDto(
             baseUrl: $this->baseSettings->baseUrl,
             apiKey:  $this->baseSettings->apiKey,
