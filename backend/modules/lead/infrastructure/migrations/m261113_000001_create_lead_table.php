@@ -23,7 +23,7 @@ class m261113_000001_create_lead_table extends Migration
             'status'        => $this->string(20)->notNull()->defaultValue("new")->comment("Статус заявки: new, in_progress, closed, cancelled"),
             'manager_note'  => $this->text()->defaultValue(null)->comment("Заметка менеджера (опционально, для будущего расширения)"),
             'created_at'    => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
-            'updated_at'    => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
+            'updated_at'    => $this->timestamp()->defaultExpression('CURRENT_TIMESTAMP'),
         ]);
 
         $this->createIndex('idx_lead_status', 'lead', 'status');
