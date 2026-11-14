@@ -22,5 +22,8 @@ return [
         'class' => 'modules\\knowledge\\Module',
         'controllerNamespace' => 'modules\\knowledge\\presentation\\controller',
     ],
+    'generation' => [
+        'class' => 'modules\\generation\\Module',
+        'controllerNamespace' => 'modules\\generation\\presentation\\controller',
     ],
 ];
