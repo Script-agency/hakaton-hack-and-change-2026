@@ -259,6 +259,44 @@ class GenerationController extends BaseController
             throw new BadGatewayException('Generation service returned an invalid response.');
         }
 
+        $statusCode = (int)$response->getStatusCode();
+
+        // Проверяем, не вернул ли Python-сервис ошибку с известным кодом
+        $errorMessages = require __DIR__ . '/../../config/error-messages.php';
+        if ($statusCode >= 400 && isset($errorMessages[$statusCode])) {
+            // Сервис вернул ошибку — формируем структурированный ответ с пользовательской фразой
+            $errorPhrase = $errorMessages[$statusCode];
+
+            // Сохраняем фразу ассистента в историю чата
+            try {
+                $this->chatService->addMessage($conversationId, 'assistant', $errorPhrase);
+            } catch (EntityNotFoundException $e) {
+                Yii::warning('Chat ' . $conversationId . ' disappeared while saving error response.', 'generation');
+            }
+
+            // Логируем ошибку
+            Yii::warning(['status' => $statusCode, 'body' => $decoded], 'generation');
+
+            // Устанавливаем HTTP-статус ответа
+            Yii::$app->response->statusCode = $statusCode;
+
+            // Извлекаем детали ошибки из ответа Python (FastAPI возвращает поле "detail")
+            $errorDetail = (string)($decoded['detail'] ?? $decoded['message'] ?? $decoded['error'] ?? 'Unknown error');
+
+            return [
+                'answer' => $errorPhrase,
+                'sources' => [],
+                'routing' => null,
+                'debug' => [
+                    'time' => date('c'),
+                    'error' => [
+                        'code' => $statusCode,
+                        'message' => $errorDetail,
+                    ],
+                ],
+            ];
+        }
+
         // Извлекаем ответ ассистента из ответа сервиса (ожидается поле response или answer)
         $answer = (string)($decoded['response'] ?? $decoded['answer'] ?? $decoded['content'] ?? '');
         if ($answer !== '') {
@@ -271,8 +309,8 @@ class GenerationController extends BaseController
         }
 
         if (!$response->isOk) {
-            Yii::warning(['status' => $response->getStatusCode(), 'body' => $decoded], 'generation');
-            Yii::$app->response->statusCode = (int)$response->getStatusCode() >= 400 ? (int)$response->getStatusCode() : 502;
+            Yii::warning(['status' => $statusCode, 'body' => $decoded], 'generation');
+            Yii::$app->response->statusCode = $statusCode >= 400 ? $statusCode : 502;
         }
         return $decoded;
     }
