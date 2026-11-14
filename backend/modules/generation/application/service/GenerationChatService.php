@@ -44,6 +44,34 @@ class GenerationChatService
     }
 
     /**
+     * Возвращает список чатов для админов в dev/презентационном режиме.
+     *
+     * @return ChatListItemDto[]
+     */
+    public function listAllChats(): array
+    {
+        $rows = (new Query())
+            ->select([
+                'c.id',
+                'c.fingerprint',
+                'c.created_at',
+                '(select count(*) from {{%generation_chat_message}} m where m.chat_id = c.id) as message_count',
+            ])
+            ->from('{{%generation_chat}} c')
+            ->orderBy(['c.id' => SORT_DESC])
+            ->all();
+
+        return array_map(function (array $row): ChatListItemDto {
+            return new ChatListItemDto(
+                (int)$row['id'],
+                (string)$row['fingerprint'],
+                (string)$row['created_at'],
+                (int)($row['message_count'] ?? 0),
+            );
+        }, $rows);
+    }
+
+    /**
      * Возвращает список чатов по fingerprint (от новых к старым).
      *
      * @param string $fingerprint

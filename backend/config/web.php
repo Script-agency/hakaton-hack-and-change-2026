@@ -26,6 +26,7 @@ $config = [
             'class'  => 'core\infrastructure\bootstrap\ResponseFormatBootstrap',
             'routes' => [
                 ''      => Response::FORMAT_JSON,
+                'admin' => Response::FORMAT_HTML,
             ],
         ],
         [
@@ -92,6 +93,7 @@ $config = [
                 require __DIR__ . '/../modules/lead/config/routing.php',
                 require __DIR__ . '/../modules/knowledge/config/routing.php',
                 require __DIR__ . '/../modules/generation/config/routing.php',
+                require __DIR__ . '/../modules/admin/config/routing.php',
                 [
                     // Swagger documentation
                     'docs/swagger/json'             => 'swagger/json',
