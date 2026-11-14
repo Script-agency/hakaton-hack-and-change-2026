@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use core\infrastructure\handler\JsonErrorHandler;
 use core\security\YiiIdentity;
 use yii\web\Response;
 
@@ -30,6 +31,9 @@ $config = [
         [
             'class'  => 'core\infrastructure\bootstrap\ErrorHandlerBootstrap',
             'apiPrefix' => '',
+            'htmlConfig' => [
+                'class' => JsonErrorHandler::class,
+            ]
         ],
         'log',
     ],
@@ -118,6 +122,7 @@ if (YII_ENV_DEV) {
     $config['bootstrap'][] = 'debug';
     $config['modules']['debug'] = [
         'class' => 'yii\debug\Module',
+        'allowedIPs' => ['*'],
     ];
 
     $config['bootstrap'][] = 'gii';

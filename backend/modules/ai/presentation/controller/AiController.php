@@ -6,6 +6,8 @@ namespace modules\ai\presentation\controller;
 
 use core\application\dto\ErrorDto;
 use core\application\dto\SuccessDto;
+use core\domain\exception\BadConfigureException;
+use core\domain\exception\LogicException;
 use core\presentation\controller\BaseController;
 use modules\ai\application\service\AiService;
 use modules\ai\domain\exception\AiInvalidResponseException;
@@ -29,114 +31,6 @@ class AiController extends BaseController
         $config = [],
     ) {
         parent::__construct($id, $module, $config);
-    }
-
-    #[OA\Get(
-        path: '/ai/settings',
-        description: 'Возвращает информацию о текущих настройках AI без раскрытия API-ключа. Базовые настройки берутся из ENV/params.php и могут быть переопределены через cookie.',
-        summary: 'Проверка наличия настроек AI',
-        tags: ['ai'],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Успешно',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'success', type: 'boolean', example: true),
-                        new OA\Property(
-                            property: 'data',
-                            properties: [
-                                new OA\Property(property: 'hasSettings', type: 'boolean', example: true),
-                                new OA\Property(property: 'model', type: 'string', example: 'gpt-4o-mini', nullable: true),
-                                new OA\Property(property: 'baseUrl', type: 'string', example: 'https://api.openai.com/v1', nullable: true),
-                            ],
-                            type: 'object',
-                        ),
-                    ],
-                ),
-            ),
-        ],
-    )]
-    /**
-     * GET /ai/settings
-     *
-     * Проверяет, установлены ли настройки AI (без возврата ключа).
-     * Возвращает model и baseUrl из объединённого источника (env + cookie).
-     */
-    public function actionSettings(): SuccessDto
-    {
-        $info = $this->aiService->getSettingsInfo();
-        return $this->success($info);
-    }
-
-    #[OA\Post(
-        path: '/ai/settings',
-        description: 'Сохраняет baseUrl, apiKey и model в httponly cookie, переопределяя базовые настройки из ENV.',
-        summary: 'Сохранение настроек AI (переопределение ENV)',
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['baseUrl', 'apiKey', 'model'],
-                properties: [
-                    new OA\Property(property: 'baseUrl', type: 'string', example: 'https://api.openai.com/v1'),
-                    new OA\Property(property: 'apiKey', type: 'string', example: 'sk-...'),
-                    new OA\Property(property: 'model', type: 'string', example: 'gpt-4o-mini'),
-                ],
-                type: 'object',
-            ),
-        ),
-        tags: ['ai'],
-        responses: [
-            new OA\Response(
-                response: 200,
-                description: 'Настройки сохранены',
-                content: new OA\JsonContent(
-                    properties: [
-                        new OA\Property(property: 'success', type: 'boolean', example: true),
-                        new OA\Property(
-                            property: 'data',
-                            properties: [
-                                new OA\Property(property: 'model', type: 'string', example: 'gpt-4o-mini'),
-                            ],
-                            type: 'object',
-                        ),
-                        new OA\Property(property: 'message', type: 'string', example: 'AI settings saved'),
-                    ],
-                ),
-            ),
-            new OA\Response(
-                response: 400,
-                description: 'Ошибка валидации (не заполнены обязательные поля)',
-                content: new OA\JsonContent(ref: '#/components/schemas/Error'),
-            ),
-        ],
-    )]
-    /**
-     * POST  /ai/settings
-     *
-     * Сохраняет настройки AI в httponly cookie, переопределяя базовые из ENV.
-     *
-     * Body: { baseUrl: string, apiKey: string, model: string }
-     */
-    public function actionSaveSettings(): ErrorDto|SuccessDto
-    {
-        $request = Yii::$app->request;
-        $baseUrl = trim((string)$request->getBodyParam('baseUrl', ''));
-        $apiKey  = trim((string)$request->getBodyParam('apiKey', ''));
-        $model   = trim((string)$request->getBodyParam('model', ''));
-
-        if ($baseUrl === '' || $apiKey === '' || $model === '') {
-            return $this->error(
-                'All fields (baseUrl, apiKey, model) are required',
-            );
-        }
-
-        $this->aiService->saveSettings($baseUrl, $apiKey, $model);
-
-        return $this->success(
-            ['model' => $model],
-            'AI settings saved',
-        );
     }
 
     #[OA\Post(
@@ -227,8 +121,9 @@ class AiController extends BaseController
     public function actionChat(): ErrorDto|SuccessDto
     {
         if (!$this->aiService->hasSettings()) {
-            return $this->error(
-                'AI settings not configured. Please set baseUrl, apiKey and model in .env or via POST /ai/settings.',
+            throw new BadConfigureException(
+                "'AI settings not configured. Please set baseUrl, apiKey and model in .env'",
+                errors: ['configure'=>[$this->aiService->getSettings()]]
             );
         }
 

@@ -1,0 +1,19 @@
+from __future__ import annotations
+
+import os
+
+
+PHP_INTERNAL_API_URL = os.getenv("PHP_INTERNAL_API_URL", "http://nginx-backend").rstrip("/")
+INTERNAL_SERVICE_TOKEN = os.getenv("INTERNAL_SERVICE_TOKEN", "")
+PHP_HTTP_TIMEOUT = float(os.getenv("PHP_HTTP_TIMEOUT", "60"))
+PHP_AI_GATEWAY_TIMEOUT = float(os.getenv("PHP_AI_GATEWAY_TIMEOUT", "180"))
+GENERATION_TOP_K = max(1, min(12, int(os.getenv("GENERATION_TOP_K", "6"))))
+GENERATION_MAX_CONTEXT_CHARS = max(4000, int(os.getenv("GENERATION_MAX_CONTEXT_CHARS", "24000")))
+GENERATION_CHUNK_SIZE_CHARS = max(800, int(os.getenv("GENERATION_CHUNK_SIZE_CHARS", "3500")))
+GENERATION_CHUNK_OVERLAP_CHARS = max(0, min(GENERATION_CHUNK_SIZE_CHARS // 2, int(os.getenv("GENERATION_CHUNK_OVERLAP_CHARS", "350"))))
+GENERATION_KNOWLEDGE_LIMIT = max(1, min(100, int(os.getenv("GENERATION_KNOWLEDGE_LIMIT", "30"))))
+
+GENERATION_LOG_FILE = os.getenv("GENERATION_LOG_FILE", "logs/generation.log")
+GENERATION_LOG_LEVEL = os.getenv("GENERATION_LOG_LEVEL", "INFO").upper()
+GENERATION_LOG_MAX_BYTES = max(1, int(os.getenv("GENERATION_LOG_MAX_BYTES", str(10 * 1024 * 1024))))
+GENERATION_LOG_BACKUP_COUNT = max(0, int(os.getenv("GENERATION_LOG_BACKUP_COUNT", "10")))

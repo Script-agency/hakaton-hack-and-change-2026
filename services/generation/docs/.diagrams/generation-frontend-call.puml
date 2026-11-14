@@ -1,0 +1,89 @@
+@startuml generation-frontend-call
+' Call flow: Frontend → PHP (Yii) → Python (FastAPI) → PHP (Knowledge/Cache) → PHP (AI Gateway) → AI → Response
+
+skinparam {
+  BackgroundColor #F8F9FA
+  ParticipantBorderColor #2E4053
+  ParticipantFontColor #1A1A2E
+  NoteBorderColor #2E86C1
+  ArrowColor #2E86C1
+}
+
+box "Frontend (Виджет)" #D5E8D4
+  participant "Виджет\nEnergyToolAssistant" as Widget
+end box
+
+box "PHP Backend (Yii)" #D4E6F1
+  participant "PHP Router\n/generation/chat" as PhpRouter
+  participant "GenerationController\n(прокси)" as PhpProxy
+  participant "Knowledge API\n/interna/v1/knowledge" as KnowledgeApi
+  participant "AI Gateway\n/interna/v1/ai/chat" as AiGateway
+end box
+
+box "Python Generation Service\n(FastAPI :8000)" #F5F5F5
+  participant "FastAPI /v1/generation/chat" as FastApi
+  participant "GenerationService\nanswer()" as GenService
+  participant "KnowledgeRouter\nroute()" as Router
+  participant "KnowledgeRetriever\nretrieve()" as Retriever
+  participant "PHPClient\nHTTP-клиент" as PhpClient
+end box
+
+actor "Пользователь" as User
+
+== 1. Пользователь отправляет вопрос ==
+User -> Widget: вопрос
+Widget -> PhpRouter: POST /api/generation/chat\n{question, messages, category_slugs...}
+note right: nginx проксирует /api → PHP backend
+
+PhpRouter -> PhpProxy: actionChat()
+note right: Yii routing → GenerationController
+
+== 2. PHP проксирует в Python ==
+PhpProxy -> FastApi: POST /v1/generation/chat\n(тело запроса как есть)
+
+== 3. Получение категорий от PHP ==
+FastApi -> GenService: answer(request)
+GenService -> PhpClient: categories()
+PhpClient -> KnowledgeApi: GET /interna/v1/knowledge/categories
+KnowledgeApi --> PhpClient: [{slug, name, description}, ...]
+PhpClient --> GenService: list of categories
+
+== 4. Роутинг по категориям ==
+GenService -> Router: route(question, categories, forced_slugs)
+Router --> GenService: [selected_slugs], routing_info
+
+== 5. Получение документов знаний ==
+GenService -> Retriever: retrieve(question, selected_slugs, top_k)
+Retriever -> PhpClient: retrieve(category_slugs, limit=30)
+PhpClient -> KnowledgeApi: POST /interna/v1/knowledge/retrieve\n{categorySlugs, limit}
+KnowledgeApi --> PhpClient: [{category, documentId, content?,\n contentUrl, documentUrl, locator, ...}]
+PhpClient --> Retriever: items
+
+== 6. Загрузка контента (если не в inline-кэше) ==
+Retriever -> PhpClient: fetch_bytes(relative_url)\n(для contentUrl или documentUrl)
+PhpClient -> KnowledgeApi: GET /interna/v1/knowledge/.../file
+KnowledgeApi --> PhpClient: bytes + content-type
+PhpClient --> Retriever: raw bytes
+
+== 7. Кэширование извлечённого текста ==
+Retriever -> PhpClient: cache_part(part, content)
+PhpClient -> KnowledgeApi: POST /interna/v1/knowledge/parts/{id}/cache\n{documentRevision, partRevision, content}
+note right: Graceful degradation —\nошибка кэша не блокирует ответ
+
+== 8. Вызов AI ==
+GenService -> PhpClient: chat(system_prompt, messages)
+PhpClient -> AiGateway: POST /interna/v1/ai/chat\n{systemPrompt, messages}
+AiGateway -> AiGateway: Прокси в OpenAI-совместимый API
+AiGateway --> PhpClient: {content, finishReason, usage}
+PhpClient --> GenService: AI response
+
+== 9. Формирование и возврат ответа ==
+GenService --> FastApi: {answer, sources, routing, debug?}
+FastApi --> PhpProxy: 200 JSON
+PhpProxy --> PhpRouter: JSON (проксируем как есть)
+PhpRouter --> Widget: JSON-ответ
+note right: При ошибках:\n502 — PHPServiceError\n504 — Timeout\n500 — Internal error
+
+Widget --> User: ответ + источники
+
+@enduml

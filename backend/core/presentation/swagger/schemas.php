@@ -280,14 +280,59 @@ class KnowledgeSchemasDefinitions
  * )
  *
  * @OA\Schema(
+ *     schema="ChatCreated",
+ *     required={"id", "fingerprint", "created_at"},
+ *     @OA\Property(property="id", type="integer", description="ID созданного чата", example=1),
+ *     @OA\Property(property="fingerprint", type="string", description="Отпечаток браузера клиента", example="a1b2c3d4e5f6..."),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-15T10:00:00+00:00")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="ChatListItem",
+ *     required={"id", "fingerprint", "created_at", "updated_at"},
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="fingerprint", type="string", example="a1b2c3d4e5f6..."),
+ *     @OA\Property(property="title", type="string", nullable=true, description="Заголовок чата (если формируется сервисом)", example="Возврат товара"),
+ *     @OA\Property(property="messages_count", type="integer", example=6),
+ *     @OA\Property(property="last_message", type="string", nullable=true, description="Превью последнего сообщения", example="Спасибо, всё понятно!"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-15T10:00:00+00:00"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-01-15T10:05:00+00:00")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="ChatMessage",
+ *     required={"id", "role", "content", "created_at"},
+ *     @OA\Property(property="id", type="integer", example=42),
+ *     @OA\Property(property="role", type="string", enum={"user", "assistant", "system"}, example="user"),
+ *     @OA\Property(property="content", type="string", example="Как оформить возврат?"),
+ *     @OA\Property(property="created_at", type="string", format="date-time", description="Точное время создания сообщения", example="2025-01-15T10:01:00+00:00")
+ * )
+ *
+ * @OA\Schema(
+ *     schema="ChatDetail",
+ *     required={"id", "fingerprint", "messages", "created_at"},
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="fingerprint", type="string", example="a1b2c3d4e5f6..."),
+ *     @OA\Property(property="title", type="string", nullable=true, example="Возврат товара"),
+ *     @OA\Property(
+ *         property="messages",
+ *         type="array",
+ *         description="История сообщений чата, отсортированная по времени",
+ *         @OA\Items(ref="#/components/schemas/ChatMessage")
+ *     ),
+ *     @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-15T10:00:00+00:00"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true, example="2025-01-15T10:05:00+00:00")
+ * )
+ *
+ * @OA\Schema(
  *     schema="GenerationChatResponse",
  *     type="object",
  *     additionalProperties=true,
  *     description="Структура ответа определяется generation-сервисом. Пример — типичный ответ LLM.",
  *     example={
- *         "answer": "Для оформления возврата обратитесь в службу поддержки...",
- *         "usage": {"prompt_tokens": 42, "completion_tokens": 128, "total_tokens": 170},
- *         "conversation_id": "conv_01HXYZ"
+ *         "response": "Для оформления возврата обратитесь в службу поддержки...",
+ *         "conversation_id": 1,
+ *         "usage": {"prompt_tokens": 42, "completion_tokens": 128, "total_tokens": 170}
  *     }
  * )
  */

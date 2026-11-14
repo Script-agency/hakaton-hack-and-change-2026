@@ -47,6 +47,7 @@ services:
       # Override .env for Docker development
       APP_ENV: ${APP_ENV:-dev}
       APP_DEBUG: ${APP_DEBUG:-true}
+      DEBUG_LVL: ${DEBUG_LVL:-3}
       APP_NAME: ${APP_NAME:-"Script Agency Energytool"}
 
       # Database — Docker overrides (pgsql, not production mysql)
@@ -63,9 +64,15 @@ services:
       COOKIE_VALIDATION_KEY: "docker-dev-key-change-in-production"
       APP_URL: "http://localhost:8080"
       FRONTEND_URL: "http://localhost"
+
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
     volumes:
       - backend_runtime:/app/runtime
       # Mount source for development (hot-reload PHP changes)
+      - ./backend/runtime:/app/runtime:delegated
+      - ./backend/storage:/app/storage:delegated
       - ./backend/web:/app/web:delegated
       - ./backend/config:/app/config:delegated
       - ./backend/core:/app/core:delegated
@@ -91,6 +98,57 @@ services:
       - ./backend/web:/app/web:ro
     depends_on:
       - php-fpm
+    networks:
+      - hackaton-net
+
+  # -------------------- Python Generation Service --------------------
+  generation:
+    build:
+      context: .
+      dockerfile: services/generation/Dockerfile
+    container_name: hackaton-generation
+    restart: unless-stopped
+    environment:
+      # PHP backend URL inside Docker network
+      PHP_INTERNAL_API_URL: ${PHP_INTERNAL_API_URL:-http://nginx-backend}
+
+      # Auth token for internal service calls (MUST be set in production)
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-NOT_A_TOKEN_SUKA}
+
+      # HTTP timeouts
+      PHP_HTTP_TIMEOUT: ${PHP_HTTP_TIMEOUT:-60}
+      PHP_AI_GATEWAY_TIMEOUT: ${PHP_AI_GATEWAY_TIMEOUT:-180}
+
+      # Generation / knowledge parameters
+      GENERATION_TOP_K: ${GENERATION_TOP_K:-6}
+      GENERATION_MAX_CONTEXT_CHARS: ${GENERATION_MAX_CONTEXT_CHARS:-24000}
+      GENERATION_CHUNK_SIZE_CHARS: ${GENERATION_CHUNK_SIZE_CHARS:-3500}
+      GENERATION_CHUNK_OVERLAP_CHARS: ${GENERATION_CHUNK_OVERLAP_CHARS:-350}
+      GENERATION_KNOWLEDGE_LIMIT: ${GENERATION_KNOWLEDGE_LIMIT:-30}
+      GENERATION_LOG_FILE: /app/logs/generation.log
+      GENERATION_LOG_LEVEL: INFO
+      GENERATION_LOG_MAX_BYTES: 10485760
+      GENERATION_LOG_BACKUP_COUNT: 10
+
+    ports:
+      - "${GENERATION_PORT:-8000}:8000"
+    volumes:
+      - ./services/generation/scripts:/app/scripts:ro
+      - ./services/generation/data:/app/data:ro
+      - ./services/generation/logs:/app/logs
+    depends_on:
+      nginx-backend:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
     networks:
       - hackaton-net
 
