@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace modules\generation\presentation\controller;
 
-use BadGatewayException;
+use modules\generation\domain\exception\BadGatewayException;
 use core\presentation\controller\BaseController;
-use ServiceUnavailableException;
+use modules\generation\domain\exception\ServiceUnavailableException;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\httpclient\Client;

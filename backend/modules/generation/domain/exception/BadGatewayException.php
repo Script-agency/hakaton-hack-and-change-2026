@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+namespace modules\generation\domain\exception;
 
 use RuntimeException;
 use Throwable;
