@@ -11,12 +11,13 @@ declare(strict_types=1);
  */
 return [
     'ai' => [
-        'class' => 'modules\ai\Module',
-        'controllerNamespace' => 'modules\ai\presentation\controller',
+        'class' => 'modules\\ai\\Module',
+        'controllerNamespace' => 'modules\\ai\\presentation\\controller',
     ],
     'lead' => [
-        'class' => 'modules\lead\Module',
-        'controllerNamespace' => 'modules\lead\presentation\controller',
+        'class' => 'modules\\lead\\Module',
+        'controllerNamespace' => 'modules\\lead\\presentation\\controller',
+    ],
     'knowledge' => [
         'class' => 'modules\\knowledge\\Module',
         'controllerNamespace' => 'modules\\knowledge\\presentation\\controller',
