@@ -45,3 +45,6 @@ stats*
 
 #linter
 .php-cs-fixer.cache
+
+# Local knowledge-base files (managed outside PostgreSQL)
+/storage/knowledge/
