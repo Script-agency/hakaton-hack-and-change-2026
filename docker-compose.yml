@@ -47,6 +47,7 @@ services:
       # Override .env for Docker development
       APP_ENV: ${APP_ENV:-dev}
       APP_DEBUG: ${APP_DEBUG:-true}
+      DEBUG_LVL: ${DEBUG_LVL:-3}
       APP_NAME: ${APP_NAME:-"Script Agency Energytool"}
 
       # Database — Docker overrides (pgsql, not production mysql)
@@ -66,6 +67,7 @@ services:
     volumes:
       - backend_runtime:/app/runtime
       # Mount source for development (hot-reload PHP changes)
+      - ./backend/runtime:/app/runtime:delegated
       - ./backend/storage:/app/storage:delegated
       - ./backend/web:/app/web:delegated
       - ./backend/config:/app/config:delegated
@@ -107,7 +109,7 @@ services:
       PHP_INTERNAL_API_URL: ${PHP_INTERNAL_API_URL:-http://nginx-backend}
 
       # Auth token for internal service calls (MUST be set in production)
-      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-NOT_A_TOKEN_SUKA}
 
       # HTTP timeouts
       PHP_HTTP_TIMEOUT: ${PHP_HTTP_TIMEOUT:-60}
