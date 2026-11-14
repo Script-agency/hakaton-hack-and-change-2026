@@ -9,6 +9,7 @@ use modules\generation\domain\exception\ServiceUnavailableException;
 use modules\generation\application\service\GenerationChatService;
 use modules\generation\application\dto\ChatCreatedDto;
 use modules\generation\application\dto\ChatDetailDto;
+use modules\generation\application\dto\ChatMessageDto;
 use core\presentation\controller\BaseController;
 use core\application\dto\ErrorDto;
 use core\domain\exception\EntityNotFoundException;
@@ -232,6 +233,28 @@ class GenerationController extends BaseController
         // Сохраняем вопрос пользователя в историю чата
         try {
             $this->chatService->addMessage($conversationId, 'user', $question);
+        } catch (EntityNotFoundException $e) {
+            throw new BadRequestHttpException('Chat with conversation_id ' . $conversationId . ' not found.');
+        }
+
+        // Загружаем полную историю чата и передаём её Python-сервису
+        // через поле chat_messages для обеспечения контекста переписки.
+        try {
+            $chatDetail = $this->chatService->getChat($conversationId);
+            $body['chat_messages'] = [
+                'id' => $chatDetail->id,
+                'fingerprint' => $chatDetail->fingerprint,
+                'created_at' => $chatDetail->created_at,
+                'messages' => array_map(function(ChatMessageDto $msg): array {
+                    return [
+                        'id' => $msg->id,
+                        'chat_id' => $msg->chat_id,
+                        'role' => $msg->role,
+                        'content' => $msg->content,
+                        'created_at' => $msg->created_at,
+                    ];
+                }, $chatDetail->messages),
+            ];
         } catch (EntityNotFoundException $e) {
             throw new BadRequestHttpException('Chat with conversation_id ' . $conversationId . ' not found.');
         }
