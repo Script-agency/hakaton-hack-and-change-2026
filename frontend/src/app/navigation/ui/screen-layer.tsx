@@ -3,7 +3,7 @@ import { useIsPresent, useReducedMotion } from "framer-motion";
 import * as m from "framer-motion/m";
 import { useRoutes } from "react-router";
 
-import { getScreenExit, getScreenInitial, getScreenTransition } from "../lib";
+import { createScreenRouteObjects, getScreenExit, getScreenInitial, getScreenTransition } from "../lib";
 import type { ScreenOptions, ScreenRoute, StackScreen } from "../types";
 import styles from "./screen-stack.module.scss";
 
@@ -36,10 +36,7 @@ export const ScreenLayer = ({
 
   const options: ScreenOptions = { isActive: isInteractive, onBack, onNewChat };
 
-  const content = useRoutes(
-    routes.map((route) => ({ path: route.path, element: route.render(options) })),
-    screen.location
-  );
+  const content = useRoutes(createScreenRouteObjects(routes, options), screen.location);
 
   useLayoutEffect(() => {
     if (!isInteractive || !isPanelOpen) {

@@ -1,42 +1,37 @@
 import { AnimatePresence } from "framer-motion";
 
 import { DebugModeSwitch } from "@features/debug-mode";
+import { LeadRequestButton } from "@features/lead-request";
 import { MessageComposer } from "@features/send-message";
 
-import { useChat } from "@entities/chat/hooks";
 import { useChatUi } from "@entities/chat/model";
-import { ChatMessageRole, type ChatMessage as ChatMessageData } from "@entities/chat/types";
+import { ChatMessageRole, type ChatMessage as ChatMessageData, type ChatSession } from "@entities/chat/types";
 import { ChatMessage } from "@entities/chat/ui";
 
-import { Collapse, LoadingState } from "@shared/ui";
+import { Collapse } from "@shared/ui";
 
-import { useChatScroll } from "../../hooks";
+import { useChatActions, useChatScroll } from "../../hooks";
 import { ChatError } from "../chat-error";
-import { ChatLoadError } from "../chat-load-error";
 import { ChatPending } from "../chat-pending";
 import { SuggestedQuestions } from "../suggested-questions";
 import styles from "./chat-conversation.module.scss";
 
 const greeting: ChatMessageData = {
   id: "greeting",
-  role: ChatMessageRole.Assistent,
+  role: ChatMessageRole.Assistant,
   text:
     "Здравствуйте! Я ИИ-помощник Energytool. Помогу разобраться с учётом электроэнергии " +
     "и подобрать решение. С чего начнём?",
 };
 
 interface ChatConversationProps {
-  chatId?: number;
+  chat?: ChatSession;
+  fingerprint: string;
   isActive: boolean;
-  onSessionCreated?: (id: number) => void;
 }
 
-export const ChatConversation = ({ chatId, isActive, onSessionCreated }: ChatConversationProps) => {
-  const { sessionId, messages, isLoading, hasLoadError, retry, isPending, hasError, sendMessage } = useChat(
-    chatId,
-    onSessionCreated,
-    isActive
-  );
+export const ChatConversation = ({ chat, fingerprint, isActive }: ChatConversationProps) => {
+  const { messages, isPending, errorMessage, sendMessage } = useChatActions({ chat, fingerprint, isActive });
 
   const isDebugAvailable = useChatUi((state) => state.isDebugAvailable);
 
@@ -46,17 +41,9 @@ export const ChatConversation = ({ chatId, isActive, onSessionCreated }: ChatCon
     messages,
     isPending,
     isDebugEnabled,
-    isReady: !isLoading && !hasLoadError,
+    isReady: true,
   });
   const hasMessages = messages.length > 0;
-
-  if (isLoading) {
-    return <LoadingState label="Загружаю сообщения…" />;
-  }
-
-  if (hasLoadError) {
-    return <ChatLoadError onRetry={retry} />;
-  }
 
   return (
     <div className={styles.conversation}>
@@ -76,11 +63,14 @@ export const ChatConversation = ({ chatId, isActive, onSessionCreated }: ChatCon
             </ol>
           </div>
           <ChatPending isPending={isPending} />
-          <ChatError hasError={hasError} />
+          <ChatError hasError={errorMessage !== undefined} message={errorMessage} />
         </div>
         {!hasMessages ? <SuggestedQuestions onSelect={sendMessage} /> : null}
       </div>
-      <MessageComposer isActive={isActive} isPending={isPending} onSend={sendMessage} sessionId={sessionId} />
+      {chat !== undefined && hasMessages ? (
+        <LeadRequestButton chatId={chat.id} disabled={!isActive || isPending} />
+      ) : null}
+      <MessageComposer isActive={isActive} isPending={isPending} onSend={sendMessage} sessionId={chat?.id ?? "start"} />
     </div>
   );
 };

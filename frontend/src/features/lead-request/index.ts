@@ -1,2 +1,2 @@
 export type { LeadRequestValues } from "./types";
-export { LeadRequestForm } from "./ui";
+export { LeadRequestForm, LeadRequestButton } from "./ui";

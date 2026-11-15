@@ -7,6 +7,7 @@ export interface ChatMessage {
   id: string;
   role: ChatMessageRole;
   text: string;
+  createdAt?: string;
   debug?: ChatDebugInfo;
 }
 
@@ -17,12 +18,27 @@ export interface ChatSession {
   messages: ChatMessage[];
 }
 
-export interface MockReplyRequest {
-  text: string;
-  turn: number;
-}
-
 export enum ChatMessageRole {
   User = "user",
-  Assistent = "assistent",
+  Assistant = "assistant",
+}
+
+export interface CreateChatRequest {
+  fingerprint: string;
+}
+
+export interface SendMessageRequest {
+  sessionId: number;
+  text: string;
+  debug?: boolean;
+}
+
+export interface CreateChatVariables extends CreateChatRequest {
+  text: string;
+  controller: AbortController;
+}
+
+export interface SendMessageVariables extends SendMessageRequest {
+  debug: boolean;
+  controller: AbortController;
 }

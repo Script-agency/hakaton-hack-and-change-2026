@@ -1,1 +1,1 @@
-export { DialogMockService } from "./dialog-mock.service";
+export { DialogService } from "./dialog.service";

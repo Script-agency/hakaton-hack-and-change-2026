@@ -1,55 +1,50 @@
-import { useNavigate } from "react-router";
+import { useQuery } from "@tanstack/react-query";
 
-import { useDialogs } from "@entities/dialog/hooks";
+import { dialogsQueryOptions } from "@entities/dialog/model";
 import { DialogItem } from "@entities/dialog/ui";
 
-import { Button, LoadingState, PageHeader } from "@shared/ui";
+import { useFingerprint } from "@shared/hooks";
 
+import { HistoryPageEmpty } from "./history-page-empty";
+import { HistoryPageError } from "./history-page-error";
+import { HistoryPageLoading } from "./history-page-loading";
 import styles from "./history-page.module.scss";
 
 interface HistoryPageProps {
   isActive: boolean;
-  onBack?: () => void;
 }
 
-export const HistoryPage = ({ isActive, onBack }: HistoryPageProps) => {
-  const navigate = useNavigate();
-  const { dialogs, isLoading, hasError, retry } = useDialogs(isActive);
+export const HistoryPage = ({ isActive }: HistoryPageProps) => {
+  const fingerprint = useFingerprint(isActive);
+  const query = useQuery({
+    ...dialogsQueryOptions(fingerprint.data ?? ""),
+    enabled: isActive && fingerprint.data !== undefined,
+  });
 
-  const handleBack = () => {
-    if (onBack !== undefined) {
-      onBack();
-    } else {
-      void navigate("/", { replace: true });
-    }
-  };
+  if (fingerprint.isError || query.isError) {
+    return (
+      <HistoryPageError
+        fingerprintError={fingerprint.error}
+        historyError={query.error}
+        onRetryFingerprint={() => void fingerprint.refetch()}
+        onRetryHistory={() => void query.refetch()}
+      />
+    );
+  }
 
-  const isEmpty = !isLoading && !hasError && dialogs.length === 0;
+  if (fingerprint.data === undefined || query.data === undefined) {
+    return <HistoryPageLoading />;
+  }
+
+  if (query.data.length === 0) {
+    return <HistoryPageEmpty />;
+  }
 
   return (
-    <div className={styles.page}>
-      <PageHeader onBack={handleBack} title="История диалогов" />
-
-      <div className={styles.content}>
-        {isLoading ? <LoadingState label="Загружаю историю…" /> : null}
-
-        {hasError && dialogs.length === 0 ? (
-          <div className={styles.status} role="alert">
-            <p className={styles.message}>Не удалось загрузить историю диалогов.</p>
-            <Button onClick={retry}>Повторить</Button>
-          </div>
-        ) : null}
-
-        {isEmpty ? <p className={styles.status}>Сохранённых диалогов пока нет.</p> : null}
-
-        {dialogs.length > 0 ? (
-          <ul className={styles.list}>
-            {dialogs.map((dialog) => (
-              <DialogItem key={dialog.id} dialog={dialog} />
-            ))}
-          </ul>
-        ) : null}
-      </div>
-    </div>
+    <ul className={styles.list}>
+      {query.data.map((dialog) => (
+        <DialogItem key={dialog.id} dialog={dialog} />
+      ))}
+    </ul>
   );
 };

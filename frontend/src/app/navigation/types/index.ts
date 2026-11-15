@@ -9,12 +9,20 @@ export interface ScreenOptions {
   onNewChat: () => void;
 }
 
-export interface ScreenRoute {
+export interface ScreenPageRoute {
+  children?: never;
   path: string;
   stack: "root" | "screen";
   direction?: ScreenDirection;
   render: (options: ScreenOptions) => ReactNode;
 }
+
+export interface ScreenLayoutRoute {
+  children: ScreenRoute[];
+  render: (options: ScreenOptions) => ReactNode;
+}
+
+export type ScreenRoute = ScreenPageRoute | ScreenLayoutRoute;
 
 export interface StackScreen {
   direction: ScreenDirection;

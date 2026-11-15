@@ -1,9 +1,10 @@
 import { AnimatePresence } from "framer-motion";
-import { matchPath, useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 import { useChatUi } from "@entities/chat/model";
 
 import { useScreenStack } from "../hooks";
+import { findScreenRoute } from "../lib";
 import type { ScreenRoute } from "../types";
 import { ScreenLayer } from "./screen-layer";
 import styles from "./screen-stack.module.scss";
@@ -18,7 +19,7 @@ export const ScreenStack = ({ routes }: ScreenStackProps) => {
 
   const isPanelOpen = useChatUi((state) => state.isPanelOpen);
 
-  const route = routes.find((candidate) => matchPath(candidate.path, location.pathname) !== null);
+  const route = findScreenRoute(routes, location.pathname);
 
   const { state, screens } = useScreenStack(route?.stack === "root", route?.direction ?? "right");
 

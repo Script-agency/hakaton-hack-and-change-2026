@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
 import { fileURLToPath } from "node:url";
+import { matchRoutes } from "react-router";
 import { createServer } from "vite";
 
 let server;
@@ -163,4 +164,71 @@ test("new chat from sent resets the stack without entering or exiting animations
   assert.equal(start.entries[start.index].location.pathname, "/");
   assert.equal(start.entries[start.index].direction, "right");
   assert.deepEqual(navigation.getScreenExit(false, false, "bottom"), { y: 0, transition: { duration: 0 } });
+});
+
+test("pathless layout routes preserve stack metadata and sibling routes", () => {
+  const routes = [
+    {
+      render: () => "chat-layout",
+      children: [
+        { path: "/", stack: "root", render: () => "start" },
+        { path: "/chats/:id", stack: "screen", render: () => "chat" },
+      ],
+    },
+    { path: "/history", stack: "screen", render: () => "history" },
+    { path: "/lead/sent", stack: "screen", direction: "bottom", render: () => "sent" },
+    { path: "*", stack: "screen", render: () => "fallback" },
+  ];
+  assert.equal(navigation.findScreenRoute(routes, "/").stack, "root");
+  assert.equal(navigation.findScreenRoute(routes, "/chats/42").path, "/chats/:id");
+  assert.equal(navigation.findScreenRoute(routes, "/history").path, "/history");
+  assert.equal(navigation.findScreenRoute(routes, "/lead/sent").direction, "bottom");
+  assert.equal(navigation.findScreenRoute(routes, "/unknown").path, "*");
+  assert.equal(navigation.findScreenRoute([], "/"), undefined);
+});
+
+test("React Router receives the shared layout and matches nested chat parameters", () => {
+  const onBack = () => {};
+  const options = { isActive: false, onBack, onNewChat: () => {} };
+  const received = [];
+  const routes = [
+    {
+      render: (screen) => {
+        received.push(screen);
+        return "chat-layout";
+      },
+      children: [
+        {
+          path: "/",
+          stack: "root",
+          render: (screen) => {
+            received.push(screen);
+            return "start";
+          },
+        },
+        {
+          path: "/chats/:id",
+          stack: "screen",
+          render: (screen) => {
+            received.push(screen);
+            return "chat";
+          },
+        },
+      ],
+    },
+  ];
+  const objects = navigation.createScreenRouteObjects(routes, options);
+  assert.ok(received.every((screen) => screen === options));
+  const start = matchRoutes(objects, "/");
+  assert.deepEqual(
+    start.map(({ route }) => route.element),
+    ["chat-layout", "start"]
+  );
+  const chat = matchRoutes(objects, "/chats/42");
+  assert.deepEqual(
+    chat.map(({ route }) => route.element),
+    ["chat-layout", "chat"]
+  );
+  assert.equal(chat.at(-1).params.id, "42");
+  assert.equal(objects[0].path, undefined);
 });

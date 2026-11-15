@@ -20,21 +20,11 @@
   color: var(--color-text-secondary);
 }
 
-.summaryLabel {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--color-text-secondary);
-}
-
-.summary {
-  margin: 0;
-  padding: 10px 12px;
-  border-radius: 12px;
+.error {
+  margin: 8px 0 0;
   font-size: 12px;
   line-height: 18px;
-  background: var(--color-surface);
+  color: var(--color-error);
 }
 
 .footer {
@@ -44,4 +34,9 @@
 
 .submit {
   width: 100%;
+
+  &:disabled {
+    cursor: default;
+    background: var(--color-brand-disabled);
+  }
 }

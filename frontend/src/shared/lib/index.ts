@@ -1,2 +1,2 @@
-export { demoDialogs } from "./demo-dialogs";
-export { mockDialogHistory } from "./mock-dialog-history";
+export { getFingerprint } from "./fingerprint";
+export { FingerprintError } from "./fingerprint-error";
