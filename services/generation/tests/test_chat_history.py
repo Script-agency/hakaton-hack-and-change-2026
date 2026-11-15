@@ -95,3 +95,40 @@ def test_chat_history_keeps_only_latest_twenty_messages():
     assert len(php.sent_messages) == 20
     assert php.sent_messages[0]["content"] == "Вопрос 6"
     assert php.sent_messages[-1]["content"] == "Новый вопрос"
+
+
+def test_agent_handoff_is_parsed_and_debug_contains_duration_and_token_usage():
+    class HandoffPHP(FakePHP):
+        async def chat(self, system_prompt, messages):
+            self.sent_messages = messages
+            return {
+                "content": '{"answer":"Для этого вопроса подключим консультанта. Заполните форму.",'
+                           '"handoff":true,"summary":"Клиенту требуется консультация по подбору решения."}',
+                "finishReason": "stop",
+                "usage": {"prompt_tokens": 123, "completion_tokens": 45, "total_tokens": 168},
+            }
+
+    payload = GenerationRequest.model_validate({
+        "question": "Нужна помощь специалиста",
+        "debug": True,
+    })
+    result = asyncio.run(GenerationService(
+        HandoffPHP(), top_k=2, max_context_chars=4000
+    ).answer(payload))
+
+    assert result["answer"] == "Для этого вопроса подключим консультанта. Заполните форму."
+    assert result["is_completed"] is True
+    assert result["summary"] == "Клиенту требуется консультация по подбору решения."
+    assert result["debug"]["duration_ms"] >= 0
+    assert result["debug"]["prompt_tokens"] == 123
+    assert result["debug"]["completion_tokens"] == 45
+
+
+def test_invalid_handoff_envelope_falls_back_to_plain_text_without_completing_chat():
+    from app.orchestration.generation_service import _parse_agent_result
+
+    answer, is_completed, summary = _parse_agent_result("Простой текстовый ответ")
+
+    assert answer == "Простой текстовый ответ"
+    assert is_completed is False
+    assert summary is None
