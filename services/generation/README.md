@@ -73,3 +73,10 @@ and set the `GENERATION_LOG_*` environment variables shown in
 [the logging guide](docs/LOGGING.md). The logger records technical metadata only;
 question/answer text, chat contents, prompts, document contents and credentials
 are not written to logs.
+
+
+### Handoff и debug-метрики
+
+AI Gateway получает системную инструкцию возвращать JSON-объект с полями `answer`, `handoff` и `summary`. При предложении заполнить форму для передачи обращения консультанту сервис возвращает `is_completed: true` и сгенерированное резюме диалога в `summary`. PHP сохраняет эти поля в `generation_chat`; дальнейшие сообщения завершённого чата не отправляются модели и получают ответ с предложением заполнить форму.
+
+При `debug: true` поле `debug` дополнительно содержит `duration_ms`, `prompt_tokens` и `completion_tokens`. Источники из `sources` сохраняются PHP в поле `generation_chat_message.sources` (PostgreSQL JSONB).
