@@ -10,6 +10,7 @@ use modules\generation\application\service\GenerationChatService;
 use modules\generation\application\dto\ChatCreatedDto;
 use modules\generation\application\dto\ChatDetailDto;
 use modules\generation\application\dto\ChatMessageDto;
+use modules\generation\application\dto\ChatListItemDto;
 use core\presentation\controller\BaseController;
 use core\application\dto\ErrorDto;
 use core\domain\exception\EntityNotFoundException;
@@ -82,6 +83,7 @@ class GenerationController extends BaseController
         return $this->chatService->createChat($fingerprint);
     }
 
+    /** @return array<int, ChatListItemDto> */
     #[OA\Get(
         path: '/generation/chat/list',
         description: 'Возвращает список всех чатов клиента по fingerprint (обязательный query-параметр). '
@@ -177,6 +179,7 @@ class GenerationController extends BaseController
         }
     }
 
+    /** @return array<string, mixed> */
     #[OA\Post(
         path: '/generation/chat',
         description: 'Проксирует запрос к внешнему generation-сервису (POST /v1/generation/chat). '
@@ -234,34 +237,49 @@ class GenerationController extends BaseController
             throw new BadRequestHttpException('Field "conversation_id" is required and must be a positive integer.');
         }
 
-        // Сохраняем вопрос пользователя в историю чата
+        // Состояние чата проверяется до вызова генерации: завершённые диалоги больше не обслуживаются AI.
         try {
-            $this->chatService->addMessage($conversationId, 'user', $question);
+            $chatDetail = $this->chatService->getChat($conversationId);
         } catch (EntityNotFoundException $e) {
             throw new BadRequestHttpException('Chat with conversation_id ' . $conversationId . ' not found.');
         }
 
-        // Загружаем полную историю чата и передаём её Python-сервису
-        // через поле chat_messages для обеспечения контекста переписки.
-        try {
-            $chatDetail = $this->chatService->getChat($conversationId);
-            $body['chat_messages'] = [
-                'id' => $chatDetail->id,
-                'fingerprint' => $chatDetail->fingerprint,
-                'created_at' => $chatDetail->created_at,
-                'messages' => array_map(function(ChatMessageDto $msg): array {
-                    return [
-                        'id' => $msg->id,
-                        'chat_id' => $msg->chat_id,
-                        'role' => $msg->role,
-                        'content' => $msg->content,
-                        'created_at' => $msg->created_at,
-                    ];
-                }, $chatDetail->messages),
+        if ($chatDetail->is_completed) {
+            $answer = 'Этот диалог уже передан консультанту. Чтобы получить помощь, заполните, пожалуйста, форму заявки.';
+            $this->chatService->addMessage($conversationId, 'user', $question);
+            $this->chatService->addMessage($conversationId, 'assistant', $answer);
+
+            return [
+                'answer' => $answer,
+                'sources' => [],
+                'routing' => null,
+                'is_completed' => true,
+                'summary' => $chatDetail->summary,
             ];
-        } catch (EntityNotFoundException $e) {
-            throw new BadRequestHttpException('Chat with conversation_id ' . $conversationId . ' not found.');
         }
+
+        // Сохраняем вопрос пользователя в истории чата.
+        $this->chatService->addMessage($conversationId, 'user', $question);
+
+        // Передаём Python полную историю и метаданные чата.
+        $chatDetail = $this->chatService->getChat($conversationId);
+        $body['chat_messages'] = [
+            'id' => $chatDetail->id,
+            'fingerprint' => $chatDetail->fingerprint,
+            'created_at' => $chatDetail->created_at,
+            'is_completed' => $chatDetail->is_completed,
+            'summary' => $chatDetail->summary,
+            'messages' => array_map(static function (ChatMessageDto $msg): array {
+                return [
+                    'id' => $msg->id,
+                    'chat_id' => $msg->chat_id,
+                    'role' => $msg->role,
+                    'content' => $msg->content,
+                    'created_at' => $msg->created_at,
+                    'sources' => $msg->sources,
+                ];
+            }, $chatDetail->messages),
+        ];
 
         $baseUrl = rtrim((string)($_ENV['GENERATION_SERVICE_URL'] ?? 'http://generation:8000'), '/');
         try {
@@ -288,32 +306,26 @@ class GenerationController extends BaseController
 
         $statusCode = (int)$response->getStatusCode();
 
-        // Проверяем, не вернул ли Python-сервис ошибку с известным кодом
+        // Известные ошибки Python возвращаем как человекочитаемые ответы и сохраняем в истории.
         $errorMessages = require __DIR__ . '/../../config/error-messages.php';
         if ($statusCode >= 400 && isset($errorMessages[$statusCode])) {
-            // Сервис вернул ошибку — формируем структурированный ответ с пользовательской фразой
             $errorPhrase = $errorMessages[$statusCode];
-
-            // Сохраняем фразу ассистента в историю чата
             try {
                 $this->chatService->addMessage($conversationId, 'assistant', $errorPhrase);
             } catch (EntityNotFoundException $e) {
                 Yii::warning('Chat ' . $conversationId . ' disappeared while saving error response.', 'generation');
             }
 
-            // Логируем ошибку
             Yii::warning(['status' => $statusCode, 'body' => $decoded], 'generation');
-
-            // Устанавливаем HTTP-статус ответа
             Yii::$app->response->statusCode = $statusCode;
-
-            // Извлекаем детали ошибки из ответа Python (FastAPI возвращает поле "detail")
             $errorDetail = (string)($decoded['detail'] ?? $decoded['message'] ?? $decoded['error'] ?? 'Unknown error');
 
             return [
                 'answer' => $errorPhrase,
                 'sources' => [],
                 'routing' => null,
+                'is_completed' => false,
+                'summary' => null,
                 'debug' => [
                     'time' => date('c'),
                     'error' => [
@@ -324,16 +336,35 @@ class GenerationController extends BaseController
             ];
         }
 
-        // Извлекаем ответ ассистента из ответа сервиса (ожидается поле response или answer)
         $answer = (string)($decoded['response'] ?? $decoded['answer'] ?? $decoded['content'] ?? '');
+        $isCompleted = ($decoded['is_completed'] ?? false) === true;
+        $summary = is_string($decoded['summary'] ?? null) ? trim($decoded['summary']) : '';
+
+        // Завершение фиксируется только при наличии агентского summary, пригодного для передачи в лид.
+        if ($isCompleted && $summary !== '') {
+            try {
+                $this->chatService->completeChat($conversationId, $summary);
+            } catch (EntityNotFoundException $e) {
+                Yii::warning('Chat ' . $conversationId . ' disappeared while saving completion state.', 'generation');
+                $isCompleted = false;
+                $summary = '';
+            }
+        } else {
+            $isCompleted = false;
+            $summary = '';
+        }
+
+        $sources = is_array($decoded['sources'] ?? null) ? $decoded['sources'] : [];
         if ($answer !== '') {
             try {
-                $this->chatService->addMessage($conversationId, 'assistant', $answer);
+                $this->chatService->addMessage($conversationId, 'assistant', $answer, $sources);
             } catch (EntityNotFoundException $e) {
-                // Если чат удалили между запросами — игнорируем
                 Yii::warning('Chat ' . $conversationId . ' disappeared while saving assistant response.', 'generation');
             }
         }
+
+        $decoded['is_completed'] = $isCompleted;
+        $decoded['summary'] = $isCompleted ? $summary : null;
 
         if (!$response->isOk) {
             Yii::warning(['status' => $statusCode, 'body' => $decoded], 'generation');

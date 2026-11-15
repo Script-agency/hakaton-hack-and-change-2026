@@ -11,6 +11,7 @@ use yii\db\ActiveRecord;
  * @property int $chat_id
  * @property string $role
  * @property string $content
+ * @property array<int, mixed>|string $sources
  * @property string $created_at
  */
 class GenerationChatMessageAR extends ActiveRecord

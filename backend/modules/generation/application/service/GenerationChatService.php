@@ -11,11 +11,7 @@ use modules\generation\application\dto\ChatListItemDto;
 use modules\generation\application\dto\ChatMessageDto;
 use modules\generation\infrastructure\persistence\GenerationChatAR;
 use modules\generation\infrastructure\persistence\GenerationChatMessageAR;
-use modules\generation\domain\exception\BadGatewayException;
-use modules\generation\domain\exception\ServiceUnavailableException;
-use Yii;
 use yii\db\Query;
-use Throwable;
 
 class GenerationChatService
 {
@@ -55,27 +51,22 @@ class GenerationChatService
                 'c.id',
                 'c.fingerprint',
                 'c.created_at',
+                'c.is_completed',
+                'c.summary',
                 '(select count(*) from {{%generation_chat_message}} m where m.chat_id = c.id) as message_count',
             ])
             ->from('{{%generation_chat}} c')
             ->orderBy(['c.id' => SORT_DESC])
             ->all();
 
-        return array_map(function (array $row): ChatListItemDto {
-            return new ChatListItemDto(
-                (int)$row['id'],
-                (string)$row['fingerprint'],
-                (string)$row['created_at'],
-                (int)($row['message_count'] ?? 0),
-            );
-        }, $rows);
+        return array_map(fn (array $row): ChatListItemDto => $this->mapChatListItem($row), $rows);
     }
 
     /**
      * Возвращает список чатов по fingerprint (от новых к старым).
      *
      * @param string $fingerprint
-     * @return ChatListItemDto[]
+     * @return array<int, ChatListItemDto>
      */
     public function listChatsByFingerprint(string $fingerprint): array
     {
@@ -84,6 +75,8 @@ class GenerationChatService
                 'c.id',
                 'c.fingerprint',
                 'c.created_at',
+                'c.is_completed',
+                'c.summary',
                 '(select count(*) from {{%generation_chat_message}} m where m.chat_id = c.id) as message_count',
             ])
             ->from('{{%generation_chat}} c')
@@ -91,18 +84,11 @@ class GenerationChatService
             ->orderBy(['c.id' => SORT_DESC])
             ->all();
 
-        return array_map(function (array $row): ChatListItemDto {
-            return new ChatListItemDto(
-                (int)$row['id'],
-                (string)$row['fingerprint'],
-                (string)$row['created_at'],
-                (int)($row['message_count'] ?? 0),
-            );
-        }, $rows);
+        return array_map(fn (array $row): ChatListItemDto => $this->mapChatListItem($row), $rows);
     }
 
     /**
-     * Возвращает детали чата со всеми сообщениями.
+     * Возвращает детали чата со всеми сообщениями, статусом завершения и summary.
      *
      * @param int $chatId
      * @return ChatDetailDto
@@ -132,6 +118,7 @@ class GenerationChatService
                 (string)$row['role'],
                 (string)$row['content'],
                 (string)$row['created_at'],
+                $this->decodeSources($row['sources'] ?? null),
             );
         }, $messages);
 
@@ -140,34 +127,40 @@ class GenerationChatService
             (string)$chat['fingerprint'],
             (string)$chat['created_at'],
             $messageDtos,
+            $this->toBoolean($chat['is_completed'] ?? false),
+            isset($chat['summary']) ? (string)$chat['summary'] : null,
         );
     }
 
     /**
-     * Добавляет сообщение в чат.
+     * Добавляет сообщение в чат. Для ответа ассистента также сохраняются источники.
      *
      * @param int $chatId
      * @param string $role user|assistant
      * @param string $content
+     * @param array<int, mixed> $sources
      * @return ChatMessageDto
      * @throws EntityNotFoundException
      */
-    public function addMessage(int $chatId, string $role, string $content): ChatMessageDto
+    public function addMessage(int $chatId, string $role, string $content, array $sources = []): ChatMessageDto
     {
-        // Проверяем, что чат существует
-        $chat = (new Query())
+        $chatExists = (new Query())
             ->from(GenerationChatAR::tableName())
             ->where(['id' => $chatId])
-            ->one();
+            ->exists();
 
-        if (!$chat) {
+        if (!$chatExists) {
             throw new EntityNotFoundException('Chat not found.');
         }
 
         $ar = new GenerationChatMessageAR();
         $ar->chat_id = $chatId;
-        $ar->role    = $role;
+        $ar->role = $role;
         $ar->content = $content;
+        $ar->sources = json_encode(
+            array_values($sources),
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+        );
 
         if (!$ar->save()) {
             throw new \RuntimeException(
@@ -181,6 +174,61 @@ class GenerationChatService
             (string)$ar->role,
             (string)$ar->content,
             (string)$ar->created_at,
+            $sources,
         );
+    }
+
+    /**
+     * Фиксирует передачу диалога консультанту. После этого чат считается закрытым для AI-ответов.
+     *
+     * @throws EntityNotFoundException
+     */
+    public function completeChat(int $chatId, string $summary): void
+    {
+        $summary = trim($summary);
+        if ($summary === '') {
+            throw new \InvalidArgumentException('Chat summary cannot be empty when completing a chat.');
+        }
+
+        $updated = GenerationChatAR::updateAll(
+            ['is_completed' => true, 'summary' => $summary],
+            ['id' => $chatId],
+        );
+
+        if ($updated === 0) {
+            throw new EntityNotFoundException('Chat not found.');
+        }
+    }
+
+    /** @param array<string, mixed> $row */
+    private function mapChatListItem(array $row): ChatListItemDto
+    {
+        return new ChatListItemDto(
+            (int)$row['id'],
+            (string)$row['fingerprint'],
+            (string)$row['created_at'],
+            (int)($row['message_count'] ?? 0),
+            $this->toBoolean($row['is_completed'] ?? false),
+            isset($row['summary']) ? (string)$row['summary'] : null,
+        );
+    }
+
+    /** @return array<int, mixed> */
+    private function decodeSources(mixed $raw): array
+    {
+        if (is_array($raw)) {
+            return array_values($raw);
+        }
+        if (!is_string($raw) || trim($raw) === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        return is_array($decoded) ? array_values($decoded) : [];
+    }
+
+    private function toBoolean(mixed $value): bool
+    {
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN);
     }
 }
