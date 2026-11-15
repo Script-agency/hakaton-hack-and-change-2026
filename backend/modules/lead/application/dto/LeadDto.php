@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace modules\lead\application\dto;
 
 use modules\lead\domain\entity\Lead;
-use core\infrastructure\persistence\LeadAR;
+use modules\lead\infrastructure\persistence\LeadAR;
 use JsonSerializable;
+use Yii;
 
 class LeadDto implements JsonSerializable
 {
@@ -58,7 +59,7 @@ class LeadDto implements JsonSerializable
             $lead->getPhone()->value(),
             $lead->getSummary(),
             $lead->getMessages(),
-            $lead->getStatus()->value(),
+            $lead->getStatus()->value,
             $lead->getManagerNote(),
             $lead->getCreatedAt()->format('Y-m-d H:i:s'),
             $lead->getUpdatedAt()->format('Y-m-d H:i:s'),
