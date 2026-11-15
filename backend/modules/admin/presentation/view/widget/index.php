@@ -93,20 +93,22 @@ $this->title = 'Admin Center';
                 <!-- Фильтры лидов -->
                 <div class="bg-dark-900 p-4 rounded-xl border border-slate-800/80 mb-4 flex flex-wrap items-end gap-3 shrink-0">
                     <div class="flex-1 min-w-[200px]">
-                        <label class="block text-xs text-slate-400 mb-1">Поиск (Имя / Email / Телефон)</label>
+                        <label class="block text-xs text-slate-400 mb-1">ФИО клиента</label>
                         <div class="relative">
                             <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
-                            <input type="text" id="lead-filter-search" placeholder="Введите запрос..." class="w-full pl-8 pr-3 py-1.5 bg-dark-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500">
+                            <input type="text" id="lead-filter-search" placeholder="Иванов Иван…"
+                                   class="w-full pl-8 pr-3 py-1.5 bg-dark-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500">
                         </div>
                     </div>
 
                     <div class="w-44">
                         <label class="block text-xs text-slate-400 mb-1">Статус</label>
-                        <select id="lead-filter-status" class="w-full px-3 py-1.5 bg-dark-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500">
+                        <select id="lead-filter-status"
+                                class="w-full px-3 py-1.5 bg-dark-800 border border-slate-700 rounded-lg text-sm text-white focus:outline-none focus:border-purple-500">
                             <option value="">Все статусы</option>
                             <option value="new">Новый (new)</option>
-                            <option value="in_process">В работе (in_process)</option>
-                            <option value="done">Завершен (done)</option>
+                            <option value="in_progress">В работе (in_progress)</option>
+                            <option value="closed">Закрыт (closed)</option>
                             <option value="cancelled">Отклонен (cancelled)</option>
                         </select>
                     </div>
@@ -269,7 +271,7 @@ $this->title = 'Admin Center';
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <div id="modal-lead-body" class="p-5 space-y-4 text-sm"></div>
+        <div id="modal-lead-body" class="p-5 space-y-4 text-sm max-h-[75vh] overflow-y-auto"></div>
     </div>
 </div>
 

@@ -28,6 +28,73 @@ document.addEventListener('DOMContentLoaded', () => {
     const loader = document.getElementById('global-loader');
     function setLoading(v) { if (loader) loader.classList.toggle('hidden', !v); }
 
+    /**
+     * Рендер истории диалога лида (поле `messages`).
+     * Поддерживает: array of {role, content}, JSON-строку, null.
+     */
+    function renderLeadMessages(messages) {
+        let list = messages;
+
+        // если пришло строкой — пробуем распарсить
+        if (typeof list === 'string') {
+            try { list = JSON.parse(list); } catch (_) { list = null; }
+        }
+
+        if (!Array.isArray(list) || list.length === 0) {
+            return `
+            <div>
+                <div class="text-xs text-slate-400 mb-1">История диалога</div>
+                <div class="p-3.5 rounded-xl bg-dark-800 border border-slate-800 text-slate-500 text-xs text-center">
+                    <i class="fa-regular fa-comment-slash mr-1"></i>
+                    История переписки отсутствует
+                </div>
+            </div>`;
+        }
+
+        const items = list.map(m => {
+            const role    = m.role || 'user';
+            const isUser  = role === 'user';
+            const isSys   = role === 'system';
+
+            const label = isSys
+                ? '<i class="fa-solid fa-gear mr-1"></i>Система'
+                : isUser
+                    ? '<i class="fa-regular fa-user mr-1"></i>Клиент'
+                    : '<i class="fa-solid fa-robot mr-1"></i>AI Ассистент';
+
+            const labelClass = isSys
+                ? 'text-slate-400'
+                : isUser ? 'text-purple-400' : 'text-emerald-400';
+
+            const bubbleClass = isSys
+                ? 'bg-dark-900 border border-dashed border-slate-700 text-slate-400 rounded-bl-xs'
+                : isUser
+                    ? 'sa-gradient text-white rounded-br-xs'
+                    : 'bg-dark-900 border border-slate-700/80 text-slate-100 rounded-bl-xs';
+
+            const align = isUser ? 'items-end' : 'items-start';
+
+            return `
+            <div class="flex flex-col ${align}">
+                <div class="text-[11px] font-semibold ${labelClass} mb-1 px-1">${label}</div>
+                <div class="max-w-[85%] rounded-2xl px-3.5 py-2 text-xs whitespace-pre-wrap leading-relaxed ${bubbleClass}">
+                    ${escapeHtml(m.content || '')}
+                </div>
+            </div>`;
+        }).join('');
+
+        return `
+        <div>
+            <div class="text-xs text-slate-400 mb-1">
+                История диалога
+                <span class="text-slate-500">(${list.length} сообщ.)</span>
+            </div>
+            <div class="p-3 space-y-2.5 rounded-xl bg-dark-800/60 border border-slate-800 max-h-72 overflow-y-auto">
+                ${items}
+            </div>
+        </div>`;
+    }
+
     // FIX: правильные HTML-сущности (в исходнике было сломано)
     function escapeHtml(str) {
         if (str === null || str === undefined) return '';
@@ -147,21 +214,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function loadLeads() {
         try {
-            const params = new URLSearchParams({ page: state.leads.page, limit: state.leads.limit });
-            const search = document.getElementById('lead-filter-search').value.trim();
-            const status = document.getElementById('lead-filter-status').value;
+            const limit = state.leads.limit;
+            const offset = (state.leads.page - 1) * limit;
+
+            const params = new URLSearchParams({
+                limit: String(limit),
+                offset: String(offset),
+            });
+
+            const search   = document.getElementById('lead-filter-search').value.trim();
+            const status   = document.getElementById('lead-filter-status').value;
             const dateFrom = document.getElementById('lead-filter-from').value;
-            const dateTo = document.getElementById('lead-filter-to').value;
+            const dateTo   = document.getElementById('lead-filter-to').value;
 
-            if (search) params.set('search', search);
-            if (status) params.set('status', status);
-            if (dateFrom) params.set('createdFrom', `${dateFrom} 00:00:00`);
-            if (dateTo) params.set('createdTo', `${dateTo} 23:59:59`);
+            if (search)   params.set('fullName', search);
+            if (status)   params.set('status', status);
+            if (dateFrom) params.set('createdFrom', `${dateFrom}T00:00:00`);
+            if (dateTo)   params.set('createdTo',   `${dateTo}T23:59:59`);
 
-            // FIX: /admin/lead → /admin/leads
             const res = await apiRequest(`/admin/leads?${params.toString()}`);
+
             state.leads.items = res.items || [];
-            state.leads.total = res.total ?? state.leads.items.length;
+            state.leads.total = res._meta?.total ?? state.leads.items.length;
 
             document.getElementById('badge-leads').textContent = state.leads.total;
             renderLeadsTable();
@@ -176,55 +250,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (state.leads.items.length === 0) {
             tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" class="py-12 text-center text-slate-500">
-                        <i class="fa-solid fa-inbox text-2xl mb-2 block"></i>
-                        Лиды не найдены
-                    </td>
-                </tr>`;
+            <tr>
+                <td colspan="7" class="py-12 text-center text-slate-500">
+                    <i class="fa-solid fa-inbox text-2xl mb-2 block"></i>
+                    Лиды не найдены
+                </td>
+            </tr>`;
         } else {
             state.leads.items.forEach(lead => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-dark-800/40 transition';
                 tr.innerHTML = `
-                    <td class="py-3 px-4 font-mono text-xs text-slate-400">#${lead.id}</td>
-                    <td class="py-3 px-4 font-medium text-white">${escapeHtml(lead.name)}</td>
-                    <td class="py-3 px-4 text-xs space-y-0.5">
-                        ${lead.email ? `<div class="text-slate-300"><i class="fa-regular fa-envelope text-slate-500 mr-1.5"></i>${escapeHtml(lead.email)}</div>` : ''}
-                        ${lead.phone ? `<div class="text-slate-300"><i class="fa-solid fa-phone text-slate-500 mr-1.5"></i>${escapeHtml(lead.phone)}</div>` : ''}
-                    </td>
-                    <td class="py-3 px-4 text-xs text-slate-300 max-w-xs truncate" title="${escapeHtml(lead.message || '')}">
-                        ${escapeHtml(lead.message || '—')}
-                    </td>
-                    <td class="py-3 px-4">
-                        <select data-lead-status="${lead.id}" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-dark-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-purple-500">
-                            <option value="new" ${lead.status === 'new' ? 'selected' : ''}>🔵 Новый (new)</option>
-                            <option value="in_process" ${lead.status === 'in_process' ? 'selected' : ''}>🟡 В работе (in_process)</option>
-                            <option value="done" ${lead.status === 'done' ? 'selected' : ''}>🟢 Завершен (done)</option>
-                            <option value="cancelled" ${lead.status === 'cancelled' ? 'selected' : ''}>🔴 Отклонен (cancelled)</option>
-                        </select>
-                    </td>
-                    <td class="py-3 px-4 text-xs text-slate-400">${escapeHtml(lead.createdAt || '')}</td>
-                    <td class="py-3 px-4 text-right">
-                        <button data-lead-view="${lead.id}" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-purple-500/20 text-slate-300 hover:text-purple-300 border border-slate-700 text-xs transition" title="Подробнее">
-                            <i class="fa-regular fa-eye"></i>
-                        </button>
-                    </td>`;
+                <td class="py-3 px-4 font-mono text-xs text-slate-400">#${lead.id}</td>
+                <td class="py-3 px-4">
+                    <div class="font-medium text-white">${escapeHtml(lead.full_name || '—')}</div>
+                    ${lead.company
+                    ? `<div class="text-[11px] text-slate-400 mt-0.5"><i class="fa-regular fa-building mr-1"></i>${escapeHtml(lead.company)}</div>`
+                    : ''}
+                </td>
+                <td class="py-3 px-4 text-xs space-y-0.5">
+                    ${lead.phone
+                    ? `<div class="text-slate-300"><i class="fa-solid fa-phone text-slate-500 mr-1.5"></i>${escapeHtml(lead.phone)}</div>`
+                    : ''}
+                    ${lead.manager_note
+                    ? `<div class="text-slate-400 italic truncate max-w-[180px]" title="${escapeHtml(lead.manager_note)}"><i class="fa-regular fa-note-sticky text-slate-500 mr-1.5"></i>${escapeHtml(lead.manager_note)}</div>`
+                    : ''}
+                </td>
+                <td class="py-3 px-4 text-xs text-slate-300 max-w-xs truncate" title="${escapeHtml(lead.summary || '')}">
+                    ${escapeHtml(lead.summary || '—')}
+                </td>
+                <td class="py-3 px-4">
+                    <select data-lead-status="${lead.id}" class="px-2.5 py-1 rounded-lg text-xs font-medium bg-dark-800 border border-slate-700 text-slate-200 focus:outline-none focus:border-purple-500">
+                        <option value="new"         ${lead.status === 'new'         ? 'selected' : ''}>🔵 Новый (new)</option>
+                        <option value="in_progress" ${lead.status === 'in_progress' ? 'selected' : ''}>🟡 В работе (in_progress)</option>
+                        <option value="closed"      ${lead.status === 'closed'      ? 'selected' : ''}>🟢 Закрыт (closed)</option>
+                        <option value="cancelled"   ${lead.status === 'cancelled'   ? 'selected' : ''}>🔴 Отклонен (cancelled)</option>
+                    </select>
+                </td>
+                <td class="py-3 px-4 text-xs text-slate-400">${escapeHtml(lead.created_at || '')}</td>
+                <td class="py-3 px-4 text-right">
+                    <button data-lead-view="${lead.id}" class="px-2.5 py-1 rounded-lg bg-dark-800 hover:bg-purple-500/20 text-slate-300 hover:text-purple-300 border border-slate-700 text-xs transition" title="Подробнее">
+                        <i class="fa-regular fa-eye"></i>
+                    </button>
+                </td>`;
                 tbody.appendChild(tr);
             });
         }
 
+        // --- Обновление статуса ---
         tbody.querySelectorAll('[data-lead-status]').forEach(select => {
             select.addEventListener('change', async (e) => {
                 const id = e.target.dataset.leadStatus;
                 const newStatus = e.target.value;
                 try {
-                    // FIX: /admin/lead → /admin/leads
                     await apiRequest(`/admin/leads/${id}/status`, {
                         method: 'PATCH',
                         body: JSON.stringify({ status: newStatus })
                     });
-                    showToast(`Статус лида #${id} обновлен на «${newStatus}»`);
+                    showToast(`Статус лида #${id} обновлён на «${newStatus}»`);
                     loadLeads();
                 } catch (err) {
                     showToast(err.message, 'error');
@@ -233,27 +316,38 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // --- Просмотр ---
         tbody.querySelectorAll('[data-lead-view]').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const id = btn.dataset.leadView;
                 try {
-                    // FIX: /admin/lead → /admin/leads
-                    const res = await apiRequest(`/admin/leads/${id}`);
+                    const res  = await apiRequest(`/admin/leads/${id}`);
                     const item = res.item || res;
+
+                    // Поле messages может прийти в разных вариантах — нормализуем
+                    const messages = item.messages ?? item.chat_messages ?? null;
+
                     document.getElementById('modal-lead-title').textContent = `Лид #${item.id}`;
                     document.getElementById('modal-lead-body').innerHTML = `
-                        <div class="grid grid-cols-2 gap-3 bg-dark-800/60 p-3.5 rounded-xl border border-slate-800">
-                            <div><div class="text-[11px] text-slate-400">Имя клиента</div><div class="font-medium text-white">${escapeHtml(item.name)}</div></div>
-                            <div><div class="text-[11px] text-slate-400">Текущий статус</div><div class="font-medium text-purple-300">${escapeHtml(item.status)}</div></div>
-                            <div><div class="text-[11px] text-slate-400">Email</div><div class="text-slate-200">${escapeHtml(item.email || '—')}</div></div>
-                            <div><div class="text-[11px] text-slate-400">Телефон</div><div class="text-slate-200">${escapeHtml(item.phone || '—')}</div></div>
-                            <div><div class="text-[11px] text-slate-400">Создан</div><div class="text-slate-300 text-xs">${escapeHtml(item.createdAt)}</div></div>
-                            <div><div class="text-[11px] text-slate-400">Обновлен</div><div class="text-slate-300 text-xs">${escapeHtml(item.updatedAt)}</div></div>
-                        </div>
-                        <div>
-                            <div class="text-xs text-slate-400 mb-1">Сообщение / Заявка</div>
-                            <div class="p-3.5 rounded-xl bg-dark-800 border border-slate-800 text-slate-200 whitespace-pre-wrap">${escapeHtml(item.message || 'Нет сообщения')}</div>
-                        </div>`;
+                <div class="grid grid-cols-2 gap-3 bg-dark-800/60 p-3.5 rounded-xl border border-slate-800">
+                    <div><div class="text-[11px] text-slate-400">ФИО</div><div class="font-medium text-white">${escapeHtml(item.full_name || '—')}</div></div>
+                    <div><div class="text-[11px] text-slate-400">Компания</div><div class="text-slate-200">${escapeHtml(item.company || '—')}</div></div>
+                    <div><div class="text-[11px] text-slate-400">Телефон</div><div class="text-slate-200">${escapeHtml(item.phone || '—')}</div></div>
+                    <div><div class="text-[11px] text-slate-400">Статус</div><div class="font-medium text-purple-300">${escapeHtml(item.status || '—')}</div></div>
+                    <div><div class="text-[11px] text-slate-400">Создан</div><div class="text-slate-300 text-xs">${escapeHtml(item.created_at || '—')}</div></div>
+                    <div><div class="text-[11px] text-slate-400">Обновлён</div><div class="text-slate-300 text-xs">${escapeHtml(item.updated_at || '—')}</div></div>
+                </div>
+                ${item.manager_note ? `
+                <div>
+                    <div class="text-xs text-slate-400 mb-1">Комментарий менеджера</div>
+                    <div class="p-3.5 rounded-xl bg-dark-800 border border-slate-800 text-slate-200 whitespace-pre-wrap">${escapeHtml(item.manager_note)}</div>
+                </div>` : ''}
+                <div>
+                    <div class="text-xs text-slate-400 mb-1">Резюме диалога</div>
+                    <div class="p-3.5 rounded-xl bg-dark-800 border border-slate-800 text-slate-200 whitespace-pre-wrap">${escapeHtml(item.summary || 'Нет резюме')}</div>
+                </div>
+                ${renderLeadMessages(messages)}`;
+
                     openModal('modal-lead');
                 } catch (err) {
                     showToast(err.message, 'error');
@@ -261,8 +355,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        // --- Пагинация ---
         const totalPages = Math.max(1, Math.ceil(state.leads.total / state.leads.limit));
-        document.getElementById('leads-pagination-info').textContent = `Всего записей: ${state.leads.total} (Стр. ${state.leads.page} из ${totalPages})`;
+        document.getElementById('leads-pagination-info').textContent =
+            `Всего записей: ${state.leads.total} (Стр. ${state.leads.page} из ${totalPages})`;
         document.getElementById('leads-page-indicator').textContent = state.leads.page;
         document.getElementById('leads-prev-page').disabled = state.leads.page <= 1;
         document.getElementById('leads-next-page').disabled = state.leads.page >= totalPages;
@@ -283,33 +379,36 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-lead-create-open').addEventListener('click', () => {
         document.getElementById('modal-lead-title').textContent = 'Создать нового лида';
         document.getElementById('modal-lead-body').innerHTML = `
-            <form id="form-create-lead" class="space-y-3">
-                <div><label class="block text-xs text-slate-400 mb-1">Имя *</label>
-                    <input type="text" id="new-lead-name" required placeholder="Иван Петров" class="w-full px-3 py-2 bg-dark-800 border border-slate-700 rounded-xl text-sm text-white"></div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="block text-xs text-slate-400 mb-1">Email</label>
-                        <input type="email" id="new-lead-email" placeholder="client@company.ru" class="w-full px-3 py-2 bg-dark-800 border border-slate-700 rounded-xl text-sm text-white"></div>
-                    <div><label class="block text-xs text-slate-400 mb-1">Телефон</label>
-                        <input type="text" id="new-lead-phone" placeholder="+79990001122" class="w-full px-3 py-2 bg-dark-800 border border-slate-700 rounded-xl text-sm text-white"></div>
-                </div>
-                <div><label class="block text-xs text-slate-400 mb-1">Сообщение</label>
-                    <textarea id="new-lead-message" rows="3" placeholder="Интересует разработка..." class="w-full px-3 py-2 bg-dark-800 border border-slate-700 rounded-xl text-sm text-white"></textarea></div>
-                <div class="pt-2 flex justify-end">
-                    <button type="submit" class="px-4 py-2 rounded-xl sa-gradient text-white text-xs font-medium">Создать лид</button>
-                </div>
-            </form>`;
+        <form id="form-create-lead" class="space-y-3">
+            <div><label class="block text-xs text-slate-400 mb-1">Компания *</label>
+                <input type="text" id="new-lead-company" required maxlength="255" placeholder="ООО Ромашка"
+                       class="w-full px-3 py-2 bg-dark-800 border border-slate-700 rounded-xl text-sm text-white"></div>
+            <div><label class="block text-xs text-slate-400 mb-1">ФИО клиента *</label>
+                <input type="text" id="new-lead-fullname" required maxlength="255" placeholder="Иванов Иван Иванович"
+                       class="w-full px-3 py-2 bg-dark-800 border border-slate-700 rounded-xl text-sm text-white"></div>
+            <div><label class="block text-xs text-slate-400 mb-1">Телефон *</label>
+                <input type="tel" id="new-lead-phone" required maxlength="20" pattern="^\\+?[\\d\\s\\-\\(\\)]+$"
+                       placeholder="+7 999 123-45-67"
+                       class="w-full px-3 py-2 bg-dark-800 border border-slate-700 rounded-xl text-sm text-white"></div>
+            <div><label class="block text-xs text-slate-400 mb-1">Резюме диалога *</label>
+                <textarea id="new-lead-summary" rows="3" required
+                          placeholder="Клиент интересуется внедрением CRM, бюджет 500к..."
+                          class="w-full px-3 py-2 bg-dark-800 border border-slate-700 rounded-xl text-sm text-white"></textarea></div>
+            <div class="pt-2 flex justify-end">
+                <button type="submit" class="px-4 py-2 rounded-xl sa-gradient text-white text-xs font-medium">Создать лид</button>
+            </div>
+        </form>`;
         openModal('modal-lead');
 
         document.getElementById('form-create-lead').addEventListener('submit', async (e) => {
             e.preventDefault();
             try {
                 const payload = {
-                    name: document.getElementById('new-lead-name').value.trim(),
-                    email: document.getElementById('new-lead-email').value.trim() || null,
-                    phone: document.getElementById('new-lead-phone').value.trim() || null,
-                    message: document.getElementById('new-lead-message').value.trim() || null
+                    company:   document.getElementById('new-lead-company').value.trim(),
+                    full_name: document.getElementById('new-lead-fullname').value.trim(),
+                    phone:     document.getElementById('new-lead-phone').value.trim(),
+                    summary:   document.getElementById('new-lead-summary').value.trim()
                 };
-                // FIX: /lead/create → /leads
                 await apiRequest('/leads', { method: 'POST', body: JSON.stringify(payload) });
                 closeModal('modal-lead');
                 showToast('Лид успешно создан');
