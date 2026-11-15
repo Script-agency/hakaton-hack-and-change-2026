@@ -2,20 +2,20 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 
 import { useCreateLead } from "@entities/lead/hooks";
 import { beginLeadRequest } from "@entities/lead/model";
-import type { LeadMessage } from "@entities/lead/types";
+import type { CreateLeadRequest } from "@entities/lead/types";
 
 import { formatPhone, getLeadRequestError, validateLeadRequest } from "../lib";
 import type { LeadRequestValues } from "../types";
 
 interface UseLeadRequestOptions {
-  messages: LeadMessage[];
+  conversation: Pick<CreateLeadRequest, "conversationId" | "fingerprint" | "summary">;
   isActive: boolean;
   onSuccess: () => void;
 }
 
 const initialValues: LeadRequestValues = { company: "", fullName: "", phone: "" };
 
-export const useLeadRequest = ({ messages, isActive, onSuccess }: UseLeadRequestOptions) => {
+export const useLeadRequest = ({ conversation, isActive, onSuccess }: UseLeadRequestOptions) => {
   const [values, setValues] = useState(initialValues);
   const [touched, setTouched] = useState<Partial<Record<keyof LeadRequestValues, boolean>>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -63,7 +63,7 @@ export const useLeadRequest = ({ messages, isActive, onSuccess }: UseLeadRequest
     event.preventDefault();
     setIsSubmitted(true);
 
-    if (!isActive || mutation.isPending || Object.keys(errors).length > 0) {
+    if (!isActive || mutation.isPending || !conversation.summary.trim() || Object.keys(errors).length > 0) {
       return;
     }
 
@@ -74,7 +74,7 @@ export const useLeadRequest = ({ messages, isActive, onSuccess }: UseLeadRequest
     }
 
     controllerRef.current = controller;
-    mutation.mutate({ request: { ...values, summary: "", messages }, controller });
+    mutation.mutate({ request: { ...values, ...conversation }, controller });
   };
 
   return {

@@ -55,7 +55,7 @@ const interfaceDeclarations = [
 ];
 
 export default defineConfig([
-  globalIgnores(["**/dist/"]),
+  globalIgnores(["**/dist/", "**/playwright-report/", "**/test-results/", "**/coverage/"]),
 
   {
     files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],

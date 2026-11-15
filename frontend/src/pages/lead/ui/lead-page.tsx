@@ -9,6 +9,7 @@ import { chatQueryOptions } from "@entities/chat/model";
 import { LoadingState } from "@shared/ui";
 
 import { LeadPageError } from "./lead-page-error";
+import { LeadPageUnavailable } from "./lead-page-unavailable";
 
 interface LeadPageProps {
   isActive: boolean;
@@ -34,10 +35,14 @@ export const LeadPage = ({ isActive }: LeadPageProps) => {
     return <LoadingState label="Загружаю переписку…" />;
   }
 
+  if (chat.data?.isCompleted !== true || chat.data.summary === null || chat.data.summary.trim().length === 0) {
+    return <LeadPageUnavailable chatId={chatId} />;
+  }
+
   return (
     <LeadRequestForm
+      conversation={{ conversationId: chat.data.id, fingerprint: chat.data.fingerprint, summary: chat.data.summary }}
       isActive={isActive}
-      messages={chat.data?.messages ?? []}
       onSuccess={() => void navigate("/lead/sent", { replace: true })}
     />
   );

@@ -67,10 +67,15 @@ export const ChatConversation = ({ chat, fingerprint, isActive }: ChatConversati
         </div>
         {!hasMessages ? <SuggestedQuestions onSelect={sendMessage} /> : null}
       </div>
-      {chat !== undefined && hasMessages ? (
-        <LeadRequestButton chatId={chat.id} disabled={!isActive || isPending} />
+      {chat?.isCompleted === true ? <LeadRequestButton chatId={chat.id} disabled={!isActive || isPending} /> : null}
+      {chat?.isCompleted !== true ? (
+        <MessageComposer
+          isActive={isActive}
+          isPending={isPending}
+          onSend={sendMessage}
+          sessionId={chat?.id ?? "start"}
+        />
       ) : null}
-      <MessageComposer isActive={isActive} isPending={isPending} onSend={sendMessage} sessionId={chat?.id ?? "start"} />
     </div>
   );
 };

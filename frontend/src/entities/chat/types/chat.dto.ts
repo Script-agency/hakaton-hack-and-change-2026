@@ -18,6 +18,8 @@ export interface ChatMessageDto {
 
 export interface ChatDetailDto extends ChatCreatedDto {
   messages: ChatMessageDto[];
+  is_completed: boolean;
+  summary: string | null;
 }
 
 export interface SendMessageRequestDto {
@@ -35,7 +37,14 @@ export interface GenerationSourceDto {
 
 export interface GenerationResponseDto {
   answer: string;
+  is_completed: boolean;
+  summary: string | null;
   sources: GenerationSourceDto[];
   routing: Record<string, unknown> | null;
-  debug?: Record<string, unknown> | null;
+  debug?: {
+    duration_ms?: number | null;
+    prompt_tokens?: number | null;
+    completion_tokens?: number | null;
+    [key: string]: unknown;
+  } | null;
 }

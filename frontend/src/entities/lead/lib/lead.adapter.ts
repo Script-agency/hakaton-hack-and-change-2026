@@ -12,7 +12,8 @@ export const adapterCreateLeadToDto = (request: CreateLeadRequest): CreateLeadRe
   full_name: request.fullName.trim(),
   phone: request.phone.replace(/[^+\d]/g, ""),
   summary: request.summary,
-  messages: request.messages.map((message) => ({ role: message.role, content: message.text })),
+  conversation_id: request.conversationId,
+  fingerprint: request.fingerprint,
 });
 
 export const adapterLeadFromDto = (dto: LeadDto): Lead => ({

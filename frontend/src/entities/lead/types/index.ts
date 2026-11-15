@@ -1,6 +1,5 @@
 export type {
   LeadContact,
-  LeadMessage,
   CreateLeadRequest,
   LeadStatus,
   Lead,

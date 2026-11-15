@@ -3,7 +3,7 @@ import { useMutationState, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 
 import { useCreateChat, useSendMessage } from "@entities/chat/hooks";
-import { beginChatRequest, ChatQueryKeys, useChatUi } from "@entities/chat/model";
+import { beginChatRequest, ChatQueryKeys, chatQueryOptions, useChatUi } from "@entities/chat/model";
 import { ChatMessageRole, type SendMessageVariables } from "@entities/chat/types";
 import { dialogsQueryOptions } from "@entities/dialog/model";
 
@@ -23,6 +23,10 @@ export const useChatActions = ({ chat, fingerprint, isActive }: UseChatActionsOp
   const send = useSendMessage({ onSettled: invalidateDialogs });
 
   const sendToSession = (sessionId: number, text: string) => {
+    if (queryClient.getQueryData(chatQueryOptions(sessionId).queryKey)?.isCompleted === true) {
+      return;
+    }
+
     const controller = beginChatRequest(sessionId);
 
     if (controller === undefined) {
@@ -68,7 +72,7 @@ export const useChatActions = ({ chat, fingerprint, isActive }: UseChatActionsOp
   const sendMessage = (value: string) => {
     const text = value.trim();
 
-    if (!isActive || text.length === 0 || isCreating || isSending) {
+    if (!isActive || chat?.isCompleted === true || text.length === 0 || isCreating || isSending) {
       return;
     }
 

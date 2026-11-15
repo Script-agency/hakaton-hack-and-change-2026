@@ -5,4 +5,6 @@ export const adapterDialogFromDto = (dto: DialogDto): DialogSummary => ({
   title: `Диалог №${dto.id}`,
   createdAt: dto.created_at,
   messageCount: dto.message_count,
+  isCompleted: dto.is_completed,
+  summary: dto.summary,
 });

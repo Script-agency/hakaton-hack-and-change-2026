@@ -19,6 +19,7 @@ export const DialogItem = ({ dialog }: DialogItemProps) => (
       </div>
       <div className={styles.meta}>
         <span className={styles.count}>{formatMessageCount(dialog.messageCount)}</span>
+        {dialog.isCompleted ? <span className={styles.count}>Консультация завершена</span> : null}
       </div>
     </Link>
   </li>

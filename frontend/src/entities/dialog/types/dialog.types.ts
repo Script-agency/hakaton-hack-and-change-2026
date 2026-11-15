@@ -3,4 +3,6 @@ export interface DialogSummary {
   title: string;
   createdAt: string;
   messageCount: number;
+  isCompleted: boolean;
+  summary: string | null;
 }

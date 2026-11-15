@@ -1,4 +1,4 @@
-import type { LeadMessage } from "@entities/lead/types";
+import type { CreateLeadRequest } from "@entities/lead/types";
 
 import { Button, TextField } from "@shared/ui";
 
@@ -6,14 +6,14 @@ import { useLeadRequest } from "../hooks";
 import styles from "./lead-request-form.module.scss";
 
 interface LeadRequestFormProps {
-  messages: LeadMessage[];
+  conversation: Pick<CreateLeadRequest, "conversationId" | "fingerprint" | "summary">;
   isActive: boolean;
   onSuccess: () => void;
 }
 
-export const LeadRequestForm = ({ messages, isActive, onSuccess }: LeadRequestFormProps) => {
+export const LeadRequestForm = ({ conversation, isActive, onSuccess }: LeadRequestFormProps) => {
   const { values, getError, handleChange, handleBlur, handleSubmit, isPending, errorMessage } = useLeadRequest({
-    messages,
+    conversation,
     isActive,
     onSuccess,
   });

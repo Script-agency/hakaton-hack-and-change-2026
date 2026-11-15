@@ -1,5 +1,7 @@
 export interface ChatDebugInfo {
   responseTimeMs: number;
+  promptTokens?: number;
+  completionTokens?: number;
   sources: string[];
 }
 
@@ -15,6 +17,9 @@ export type ChatSessionKey = number | "start";
 
 export interface ChatSession {
   id: number;
+  fingerprint: string;
+  isCompleted: boolean;
+  summary: string | null;
   messages: ChatMessage[];
 }
 

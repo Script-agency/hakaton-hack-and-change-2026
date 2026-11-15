@@ -4,14 +4,10 @@ export interface LeadContact {
   phone: string;
 }
 
-export interface LeadMessage {
-  role: "user" | "assistant";
-  text: string;
-}
-
 export interface CreateLeadRequest extends LeadContact {
   summary: string;
-  messages: LeadMessage[];
+  conversationId: number;
+  fingerprint: string;
 }
 
 export type LeadStatus = "new" | "in_progress" | "closed" | "cancelled";

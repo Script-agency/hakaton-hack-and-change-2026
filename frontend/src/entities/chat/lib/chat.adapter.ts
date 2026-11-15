@@ -27,6 +27,9 @@ export const adapterChatMessageFromDto = (dto: ChatMessageDto): ChatMessage | un
 
 export const adapterChatFromDto = (dto: ChatDetailDto): ChatSession => ({
   id: dto.id,
+  fingerprint: dto.fingerprint,
+  isCompleted: dto.is_completed,
+  summary: dto.summary,
   messages: dto.messages.flatMap((item) => {
     const message = adapterChatMessageFromDto(item);
 
@@ -36,6 +39,9 @@ export const adapterChatFromDto = (dto: ChatDetailDto): ChatSession => ({
 
 export const adapterCreatedChatFromDto = (dto: ChatCreatedDto): ChatSession => ({
   id: dto.id,
+  fingerprint: dto.fingerprint,
+  isCompleted: false,
+  summary: null,
   messages: [],
 });
 
@@ -49,7 +55,13 @@ export const adapterGeneratedMessageFromDto = (
   text: dto.answer,
   debug: {
     responseTimeMs,
-    sources: dto.sources.map((source) => source.title),
+    ...(typeof dto.debug?.prompt_tokens === "number" ? { promptTokens: dto.debug.prompt_tokens } : {}),
+    ...(typeof dto.debug?.completion_tokens === "number" ? { completionTokens: dto.debug.completion_tokens } : {}),
+    sources: dto.sources.map((source) => {
+      const filename = source.filename?.trim();
+
+      return filename !== undefined && filename.length > 0 ? `${source.title} (${filename})` : source.title;
+    }),
   },
 });
 

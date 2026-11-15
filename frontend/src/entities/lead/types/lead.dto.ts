@@ -5,10 +5,13 @@ export interface CreateLeadRequestDto {
   full_name: string;
   phone: string;
   summary: string;
-  messages: { role: "user" | "assistant"; content: string }[];
+  conversation_id: number;
+  fingerprint: string;
 }
 
-export interface LeadDto extends CreateLeadRequestDto {
+export interface LeadDto extends Omit<CreateLeadRequestDto, "conversation_id" | "fingerprint"> {
+  conversation_id: number | null;
+  fingerprint: string | null;
   id: number;
   status: LeadStatus;
   manager_note: string | null;

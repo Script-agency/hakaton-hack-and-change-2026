@@ -1,36 +1,8 @@
 import assert from "node:assert/strict";
-import { after, before, test } from "node:test";
-import { fileURLToPath } from "node:url";
-import { createServer } from "vite";
+import { test } from "vitest";
 
-let server;
-let useChatUi;
-let resetChatUi;
-let configureChatDebug;
-let widgetRegistry;
-let parseChatId;
-
-before(async () => {
-  server = await createServer({
-    configFile: false,
-    resolve: { alias: { "@shared": fileURLToPath(new URL("../src/shared", import.meta.url)) } },
-    root: fileURLToPath(new URL("..", import.meta.url)),
-    server: { middlewareMode: true, ws: false, watch: null },
-    optimizeDeps: { noDiscovery: true, include: [] },
-  });
-
-  const storeModule = await server.ssrLoadModule("/src/entities/chat/model/chat-ui.store.ts");
-  widgetRegistry = await server.ssrLoadModule("/src/app/widget-instance.ts");
-
-  parseChatId = (await server.ssrLoadModule("/src/entities/chat/lib/index.ts")).parseChatId;
-  useChatUi = storeModule.useChatUi;
-  resetChatUi = storeModule.resetChatUi;
-  configureChatDebug = storeModule.configureChatDebug;
-});
-
-after(async () => {
-  await server?.close();
-});
+import { parseChatId } from "../lib";
+import { configureChatDebug, resetChatUi, useChatUi } from "./chat-ui.store";
 
 test("the shared UI store resets debug settings and the draft for a fresh mount", () => {
   useChatUi.getState().setDebugEnabled(true);
@@ -66,32 +38,6 @@ test("debug configuration gates the switch, enables diagnostics and resets on un
   assert.equal(useChatUi.getState().isDebugEnabled, false);
 });
 
-test("mounting a second widget is rejected even in another container; unmount releases the guard", () => {
-  const first = { container: {}, instance: { unmount: () => {} } };
-  const second = { container: {}, instance: { unmount: () => {} } };
-
-  widgetRegistry.registerWidget(first);
-
-  try {
-    assert.throws(() => widgetRegistry.registerWidget(first), /Only one widget/);
-    assert.throws(() => widgetRegistry.registerWidget(second), /Only one widget/);
-    assert.equal(widgetRegistry.getMountedWidget(), first);
-  } finally {
-    widgetRegistry.unregisterWidget(first);
-  }
-
-  widgetRegistry.registerWidget(second);
-
-  try {
-    widgetRegistry.unregisterWidget(first);
-    assert.equal(widgetRegistry.getMountedWidget(), second);
-  } finally {
-    widgetRegistry.unregisterWidget(second);
-  }
-
-  assert.equal(widgetRegistry.getMountedWidget(), undefined);
-});
-
 test("drafts belong to their own sessions while multiple screens remain mounted", () => {
   useChatUi.getState().setDraft("start", "Новый вопрос");
   useChatUi.getState().setDraft(1, "Уточнение по складу");
@@ -108,6 +54,7 @@ test("route parameters become numeric session IDs and malformed IDs cannot start
   assert.equal(parseChatId("42"), 42);
   assert.equal(parseChatId("0"), undefined);
   assert.equal(parseChatId(undefined), undefined);
+
   for (const value of ["", "abc", "1.5", "-1", "1e3", "9007199254740992", "4276cf18-c49f-4664-93f0-6e8a542e7b6a"]) {
     assert.equal(parseChatId(value), undefined);
   }

@@ -19,33 +19,47 @@ export const useSendMessage = ({ onSettled }: SendMessageOptions) => {
       const startedAt = performance.now();
       const { data } = await ChatService.sendMessage({ sessionId, text, debug }, controller.signal);
 
-      return adapterGeneratedMessageFromDto(data, crypto.randomUUID(), performance.now() - startedAt);
+      return {
+        message: adapterGeneratedMessageFromDto(data, crypto.randomUUID(), performance.now() - startedAt),
+        isCompleted: data.is_completed,
+        summary: data.summary,
+      };
     },
     onMutate: async ({ sessionId, text, controller }) => {
       const { queryKey } = chatQueryOptions(sessionId);
       await queryClient.cancelQueries({ queryKey });
       controller.signal.throwIfAborted();
-      queryClient.setQueryData<ChatSession>(queryKey, (current) => ({
-        id: sessionId,
-        messages: [
-          ...(current?.messages ?? []),
-          {
-            id: crypto.randomUUID(),
-            role: ChatMessageRole.User,
-            text,
-          },
-        ],
-      }));
+      queryClient.setQueryData<ChatSession>(queryKey, (current) =>
+        current === undefined
+          ? undefined
+          : {
+              ...current,
+              messages: [
+                ...current.messages,
+                {
+                  id: crypto.randomUUID(),
+                  role: ChatMessageRole.User,
+                  text,
+                },
+              ],
+            }
+      );
     },
     onSuccess: (reply, { sessionId, controller }) => {
       if (controller.signal.aborted) {
         return;
       }
 
-      queryClient.setQueryData(chatQueryOptions(sessionId).queryKey, (current) => ({
-        id: sessionId,
-        messages: [...(current?.messages ?? []), reply],
-      }));
+      queryClient.setQueryData(chatQueryOptions(sessionId).queryKey, (current) =>
+        current === undefined
+          ? undefined
+          : {
+              ...current,
+              isCompleted: reply.isCompleted,
+              summary: reply.summary,
+              messages: [...current.messages, reply.message],
+            }
+      );
     },
     onSettled: async (reply, _error, { sessionId, controller }) => {
       try {
@@ -62,14 +76,14 @@ export const useSendMessage = ({ onSettled }: SendMessageOptions) => {
         if (!controller.signal.aborted && reply !== undefined) {
           const answer = [...fresh.messages]
             .reverse()
-            .find((message) => message.role === ChatMessageRole.Assistant && message.text === reply.text);
+            .find((message) => message.role === ChatMessageRole.Assistant && message.text === reply.message.text);
           queryClient.setQueryData(options.queryKey, {
             ...fresh,
             messages: fresh.messages.map((message) =>
               message === answer
                 ? {
                     ...message,
-                    debug: reply.debug,
+                    debug: reply.message.debug,
                   }
                 : message
             ),
