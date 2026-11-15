@@ -17,10 +17,15 @@ class Lead
     private string $fullName;
     private Phone $phone;
     private string $summary;
-    /** @var array<int, mixed>|null */
+    /**
+     * @deprecated История хранится в generation_chat_message и доступна через conversationId.
+     * @var array<int, mixed>|null
+     */
     private ?array $messages;
     private LeadStatus $status;
     private ?string $managerNote;
+    private ?string $fingerprint;
+    private ?int $conversationId;
     private DateTimeImmutable $createdAt;
     private DateTimeImmutable $updatedAt;
 
@@ -40,6 +45,8 @@ class Lead
         ?string $managerNote        = null,
         ?DateTimeImmutable $createdAt = null,
         ?DateTimeImmutable $updatedAt = null,
+        ?string $fingerprint = null,
+        ?int $conversationId = null,
     ) {
         $this->id          = $id;
         $this->company     = $this->validateString($company, 'company', 255);
@@ -49,6 +56,17 @@ class Lead
         $this->status      = $status;
         $this->messages    = $messages;
         $this->managerNote = $managerNote;
+        $this->fingerprint = $fingerprint !== null ? trim($fingerprint) : null;
+        if ($this->fingerprint === '') {
+            $this->fingerprint = null;
+        }
+        if ($this->fingerprint !== null && mb_strlen($this->fingerprint) > 255) {
+            throw new ValidationException('Lead fingerprint is too long (max 255).');
+        }
+        if ($conversationId !== null && $conversationId <= 0) {
+            throw new ValidationException('Lead conversation_id must be a positive integer.');
+        }
+        $this->conversationId = $conversationId;
         $this->createdAt   = $createdAt ?? new DateTimeImmutable();
         $this->updatedAt   = $updatedAt ?? new DateTimeImmutable();
     }
@@ -94,6 +112,16 @@ class Lead
     public function getManagerNote(): ?string
     {
         return $this->managerNote;
+    }
+
+    public function getFingerprint(): ?string
+    {
+        return $this->fingerprint;
+    }
+
+    public function getConversationId(): ?int
+    {
+        return $this->conversationId;
     }
 
     public function getCreatedAt(): DateTimeImmutable

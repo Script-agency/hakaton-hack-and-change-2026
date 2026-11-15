@@ -22,7 +22,10 @@ class LeadDto implements JsonSerializable
     private ?string $managerNote;
     private string $createdAt;
     private string $updatedAt;
+    private ?string $fingerprint;
+    private ?int $conversationId;
 
+    /** @param array<int, mixed>|null $messages */
     public function __construct(
         int $id,
         string $company,
@@ -34,6 +37,8 @@ class LeadDto implements JsonSerializable
         ?string $managerNote,
         string $createdAt,
         string $updatedAt,
+        ?string $fingerprint = null,
+        ?int $conversationId = null,
     ) {
         $this->id          = $id;
         $this->company     = $company;
@@ -45,6 +50,8 @@ class LeadDto implements JsonSerializable
         $this->managerNote = $managerNote;
         $this->createdAt   = $createdAt;
         $this->updatedAt   = $updatedAt;
+        $this->fingerprint = $fingerprint;
+        $this->conversationId = $conversationId;
     }
 
     /**
@@ -63,6 +70,8 @@ class LeadDto implements JsonSerializable
             $lead->getManagerNote(),
             $lead->getCreatedAt()->format('Y-m-d H:i:s'),
             $lead->getUpdatedAt()->format('Y-m-d H:i:s'),
+            $lead->getFingerprint(),
+            $lead->getConversationId(),
         );
     }
 
@@ -82,9 +91,12 @@ class LeadDto implements JsonSerializable
             $ar->manager_note,
             (string) $ar->created_at,
             (string) $ar->updated_at,
+            $ar->fingerprint !== null ? (string) $ar->fingerprint : null,
+            $ar->conversation_id !== null ? (int) $ar->conversation_id : null,
         );
     }
 
+    /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return [
@@ -98,6 +110,8 @@ class LeadDto implements JsonSerializable
             'manager_note' => $this->managerNote,
             'created_at'  => $this->createdAt,
             'updated_at'  => $this->updatedAt,
+            'fingerprint' => $this->fingerprint,
+            'conversation_id' => $this->conversationId,
         ];
     }
 }
