@@ -127,6 +127,8 @@ class DbLeadRepository implements ILeadRepository
             : null;
         $ar->status       = $lead->getStatus()->value;
         $ar->manager_note = $lead->getManagerNote();
+        $ar->fingerprint = $lead->getFingerprint();
+        $ar->conversation_id = $lead->getConversationId();
 
         $ar->updated_at = $lead->getUpdatedAt()->format('Y-m-d H:i:s');
         if ($isNew) {
@@ -212,6 +214,8 @@ class DbLeadRepository implements ILeadRepository
             $row['manager_note'] !== null ? (string)$row['manager_note'] : null,
             new DateTimeImmutable((string)$row['created_at']),
             new DateTimeImmutable((string)$row['updated_at']),
+            isset($row['fingerprint']) ? (string)$row['fingerprint'] : null,
+            isset($row['conversation_id']) ? (int)$row['conversation_id'] : null,
         );
     }
 

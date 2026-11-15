@@ -17,6 +17,8 @@ class CreateLeadCommand
         public Phone $phone,
         public string $summary,
         public ?array $messages = null,
+        public ?string $fingerprint = null,
+        public ?int $conversationId = null,
     ) {
     }
 }
