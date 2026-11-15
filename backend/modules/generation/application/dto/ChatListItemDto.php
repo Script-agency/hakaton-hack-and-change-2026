@@ -17,9 +17,12 @@ class ChatListItemDto implements \JsonSerializable
         public readonly string $fingerprint,
         public readonly string $created_at,
         public readonly int $message_count = 0,
+        public readonly bool $is_completed = false,
+        public readonly ?string $summary = null,
     ) {
     }
 
+    /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return [
@@ -27,6 +30,8 @@ class ChatListItemDto implements \JsonSerializable
             'fingerprint'   => $this->fingerprint,
             'created_at'    => $this->created_at,
             'message_count' => $this->message_count,
+            'is_completed'  => $this->is_completed,
+            'summary'       => $this->summary,
         ];
     }
 }
