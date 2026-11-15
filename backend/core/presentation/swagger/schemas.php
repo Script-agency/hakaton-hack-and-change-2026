@@ -99,13 +99,16 @@ class MainSchemasDefinitions
  *         property="messages",
  *         type="array",
  *         nullable=true,
- *         description="История сообщений с AI-агентом (опционально)",
+ *         deprecated=true,
+ *         description="DEPRECATED: для истории чата передавайте conversation_id; история читается из generation_chat_message",
  *         @OA\Items(
  *             type="object",
  *             additionalProperties=true,
  *             example={"role": "user", "content": "Здравствуйте, хочу узнать про CRM"}
  *         )
- *     )
+ *     ),
+ *     @OA\Property(property="fingerprint", type="string", maxLength=255, nullable=true, description="Fingerprint браузера диалога"),
+ *     @OA\Property(property="conversation_id", type="integer", minimum=1, nullable=true, description="ID диалога из generation_chat")
  * )
  * @OA\Schema(
  *     schema="UpdateLeadStatusRequest",
@@ -254,7 +257,7 @@ class KnowledgeSchemasDefinitions
 /**
  * @OA\Schema(
  *     schema="GenerationChatRequest",
- *     required={"question"},
+ *     required={"question", "conversation_id"},
  *     @OA\Property(
  *         property="question",
  *         type="string",
@@ -263,10 +266,9 @@ class KnowledgeSchemasDefinitions
  *     ),
  *     @OA\Property(
  *         property="conversation_id",
- *         type="string",
- *         nullable=true,
- *         description="Идентификатор диалога (пробрасывается в generation-сервис)",
- *         example="conv_01HXYZ"
+ *         type="integer",
+ *         description="ID диалога из generation_chat",
+ *         example=1
  *     ),
  *     @OA\Property(
  *         property="context",
@@ -289,28 +291,28 @@ class KnowledgeSchemasDefinitions
  *
  * @OA\Schema(
  *     schema="ChatListItem",
- *     required={"id", "fingerprint", "created_at", "updated_at"},
+ *     required={"id", "fingerprint", "created_at", "message_count", "is_completed"},
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="fingerprint", type="string", example="a1b2c3d4e5f6..."),
- *     @OA\Property(property="title", type="string", nullable=true, description="Заголовок чата (если формируется сервисом)", example="Возврат товара"),
- *     @OA\Property(property="messages_count", type="integer", example=6),
- *     @OA\Property(property="last_message", type="string", nullable=true, description="Превью последнего сообщения", example="Спасибо, всё понятно!"),
  *     @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-15T10:00:00+00:00"),
- *     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-01-15T10:05:00+00:00")
+ *     @OA\Property(property="message_count", type="integer", example=6),
+ *     @OA\Property(property="is_completed", type="boolean", example=false),
+ *     @OA\Property(property="summary", type="string", nullable=true, description="Резюме для передачи консультанту")
  * )
  *
  * @OA\Schema(
  *     schema="ChatMessage",
- *     required={"id", "role", "content", "created_at"},
+ *     required={"id", "role", "content", "created_at", "sources"},
  *     @OA\Property(property="id", type="integer", example=42),
  *     @OA\Property(property="role", type="string", enum={"user", "assistant", "system"}, example="user"),
  *     @OA\Property(property="content", type="string", example="Как оформить возврат?"),
- *     @OA\Property(property="created_at", type="string", format="date-time", description="Точное время создания сообщения", example="2025-01-15T10:01:00+00:00")
+ *     @OA\Property(property="created_at", type="string", format="date-time", description="Точное время создания сообщения", example="2025-01-15T10:01:00+00:00"),
+ *     @OA\Property(property="sources", type="array", description="Источники, использованные для ответа ассистента", @OA\Items(type="object", additionalProperties=true))
  * )
  *
  * @OA\Schema(
  *     schema="ChatDetail",
- *     required={"id", "fingerprint", "messages", "created_at"},
+ *     required={"id", "fingerprint", "messages", "created_at", "is_completed"},
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="fingerprint", type="string", example="a1b2c3d4e5f6..."),
  *     @OA\Property(property="title", type="string", nullable=true, example="Возврат товара"),
@@ -321,18 +323,35 @@ class KnowledgeSchemasDefinitions
  *         @OA\Items(ref="#/components/schemas/ChatMessage")
  *     ),
  *     @OA\Property(property="created_at", type="string", format="date-time", example="2025-01-15T10:00:00+00:00"),
- *     @OA\Property(property="updated_at", type="string", format="date-time", nullable=true, example="2025-01-15T10:05:00+00:00")
+ *     @OA\Property(property="is_completed", type="boolean", example=false),
+ *     @OA\Property(property="summary", type="string", nullable=true, description="Резюме для передачи консультанту")
  * )
  *
  * @OA\Schema(
  *     schema="GenerationChatResponse",
  *     type="object",
  *     additionalProperties=true,
- *     description="Структура ответа определяется generation-сервисом. Пример — типичный ответ LLM.",
+ *     description="Ответ генерации, включая состояние передачи консультанту и диагностические метрики.",
+ *     @OA\Property(property="answer", type="string", example="Для этого вопроса подключим консультанта. Заполните форму заявки."),
+ *     @OA\Property(property="sources", type="array", @OA\Items(type="object", additionalProperties=true)),
+ *     @OA\Property(property="routing", type="object", additionalProperties=true),
+ *     @OA\Property(property="is_completed", type="boolean", example=true),
+ *     @OA\Property(property="summary", type="string", nullable=true, example="Клиенту требуется консультация по вопросу учёта электроэнергии."),
+ *     @OA\Property(
+ *         property="debug",
+ *         type="object",
+ *         nullable=true,
+ *         @OA\Property(property="duration_ms", type="number", format="float", example=1250.5),
+ *         @OA\Property(property="prompt_tokens", type="integer", nullable=true, example=42),
+ *         @OA\Property(property="completion_tokens", type="integer", nullable=true, example=128),
+ *         @OA\Property(property="retrieval", type="object", additionalProperties=true),
+ *         @OA\Property(property="ai", type="object", additionalProperties=true)
+ *     ),
  *     example={
- *         "response": "Для оформления возврата обратитесь в службу поддержки...",
- *         "conversation_id": 1,
- *         "usage": {"prompt_tokens": 42, "completion_tokens": 128, "total_tokens": 170}
+ *         "answer": "Для этого вопроса подключим консультанта. Заполните форму заявки.",
+ *         "is_completed": true,
+ *         "summary": "Клиенту требуется консультация по вопросу учёта электроэнергии.",
+ *         "debug": {"duration_ms": 1250.5, "prompt_tokens": 42, "completion_tokens": 128}
  *     }
  * )
  */
