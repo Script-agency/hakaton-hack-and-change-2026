@@ -145,6 +145,7 @@ class DbLeadRepository implements ILeadRepository
         }
     }
 
+    private function buildOrderBy(?string $orderBy): array
     {
         if ($orderBy === null || trim($orderBy) === '') {
             return ['id' => SORT_ASC];
