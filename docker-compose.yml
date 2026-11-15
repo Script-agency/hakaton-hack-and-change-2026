@@ -44,30 +44,47 @@ services:
     container_name: hackaton-php-fpm
     restart: unless-stopped
     environment:
-      # Override .env for Docker development
+      # ---- Application ----
       APP_ENV: ${APP_ENV:-dev}
       APP_DEBUG: ${APP_DEBUG:-true}
       DEBUG_LVL: ${DEBUG_LVL:-3}
       APP_NAME: ${APP_NAME:-"Script Agency Energytool"}
+      APP_URL: ${APP_URL:-"http://localhost:8080"}
+      COOKIE_VALIDATION_KEY: ${COOKIE_VALIDATION_KEY:-"docker-dev-key-change-in-production"}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      SENDER_EMAIL: ${SENDER_EMAIL:-noreply@example.com}
+      SENDER_NAME: ${SENDER_NAME:-Script Agency Energytool}
 
-      # Database — Docker overrides (pgsql, not production mysql)
+      # ---- Frontend ----
+      FRONTEND_URL: ${FRONTEND_URL:-"http://localhost"}
+
+      # ---- Database — composed from POSTGRES_* ----
       DB_DSN: "pgsql:host=postgres;port=5432;dbname=${POSTGRES_DB:-hackaton}"
       DB_USERNAME: ${POSTGRES_USER:-postgres}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-secret}
 
-      # Redis — Docker overrides
+      # ---- Redis ----
       REDIS_HOST: redis
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ""
 
-      # Other required vars (dummy safe defaults for dev)
-      COOKIE_VALIDATION_KEY: "docker-dev-key-change-in-production"
-      APP_URL: "http://localhost:8080"
-      FRONTEND_URL: "http://localhost"
-
+      # ---- AI Provider ----
       AI_BASE_URL: ${AI_BASE_URL:-}
       AI_API_KEY: ${AI_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-}
+      AI_HTTP_TIMEOUT: ${AI_HTTP_TIMEOUT:-300}
+      AI_CONNECT_TIMEOUT: ${AI_CONNECT_TIMEOUT:-15}
+      AI_MAX_RETRIES: ${AI_MAX_RETRIES:-2}
+
+      # ---- Knowledge Base ----
+      KNOWLEDGE_STORAGE_PATH: /app/storage/knowledge
+      KNOWLEDGE_MAX_FILE_SIZE: ${KNOWLEDGE_MAX_FILE_SIZE:-20971520}
+      KNOWLEDGE_MAX_PART_SIZE: ${KNOWLEDGE_MAX_PART_SIZE:-1048576}
+      KNOWLEDGE_MAX_INLINE_PART_BYTES: ${KNOWLEDGE_MAX_INLINE_PART_BYTES:-262144}
+      KNOWLEDGE_REDIS_TTL: ${KNOWLEDGE_REDIS_TTL:-3600}
+      GENERATION_SERVICE_URL: ${GENERATION_SERVICE_URL:-http://generation:8000}
+      GENERATION_HTTP_TIMEOUT: ${GENERATION_HTTP_TIMEOUT:-180}
+      GENERATION_CONNECT_TIMEOUT: ${GENERATION_CONNECT_TIMEOUT:-5}
     volumes:
       - backend_runtime:/app/runtime
       # Mount source for development (hot-reload PHP changes)
