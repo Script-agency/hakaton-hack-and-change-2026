@@ -1,5 +1,7 @@
 import { Link } from "react-router";
 
+import { Badge } from "@shared/ui";
+
 import { formatDialogDate, formatMessageCount } from "../lib";
 import type { DialogSummary } from "../types";
 import styles from "./dialog-item.module.scss";
@@ -19,7 +21,9 @@ export const DialogItem = ({ dialog }: DialogItemProps) => (
       </div>
       <div className={styles.meta}>
         <span className={styles.count}>{formatMessageCount(dialog.messageCount)}</span>
-        {dialog.isCompleted ? <span className={styles.count}>Консультация завершена</span> : null}
+        <Badge tone={dialog.isCompleted ? "success" : "neutral"}>
+          {dialog.isCompleted ? "Консультация завершена" : "Консультация не завершена"}
+        </Badge>
       </div>
     </Link>
   </li>

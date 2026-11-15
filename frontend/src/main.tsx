@@ -6,7 +6,7 @@ if (container === null) {
   throw new Error("Root element was not found");
 }
 
-const widget = mount({ container });
+const widget = mount({ container, debug: true });
 
 if (import.meta.hot !== undefined) {
   import.meta.hot.dispose(() => widget.unmount());

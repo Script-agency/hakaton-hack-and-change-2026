@@ -1,6 +1,16 @@
 import type { Page } from "@playwright/test";
 
-import { answer, expect, expectReply, fillContacts, openLeadForm, openWidget, sendMessage, test } from "../fixtures";
+import {
+  answer,
+  expect,
+  expectReply,
+  fillContacts,
+  openLeadForm,
+  openWidget,
+  sendMessage,
+  summary,
+  test,
+} from "../fixtures";
 
 const screenshot = async (page: Page, name: string) => {
   const viewport = page.viewportSize();
@@ -51,12 +61,15 @@ test("completed conversation", async ({ page, api }) => {
   await screenshot(page, "completed.png");
 });
 
-test("history", async ({ page }) => {
+test("history", async ({ page, api }) => {
   await openWidget(page);
   await sendMessage(page);
   await expectReply(page, answer);
+  api.chats.push({ ...api.chats[0], id: 43, is_completed: true, summary });
   await page.getByRole("button", { name: "История диалогов" }).click();
   await expect(page.getByRole("link", { name: /Диалог №42/ })).toBeVisible();
+  await expect(page.getByText("Консультация не завершена", { exact: true })).toHaveCSS("font-weight", "400");
+  await expect(page.getByText("Консультация завершена", { exact: true })).toHaveCSS("font-weight", "400");
   await screenshot(page, "history.png");
 });
 

@@ -80,6 +80,7 @@ test("completion survives history navigation and replaces composer with manager 
 
   const dialog = page.getByRole("link", { name: /Диалог №42/ });
   await expect(dialog).toHaveText(/Консультация завершена/);
+  await expect(dialog.getByText("Консультация завершена", { exact: true })).toHaveCSS("font-weight", "400");
   await dialog.click();
   await expect(page.getByRole("button", { name: "Связаться с менеджером" })).toBeVisible();
   await expect(page.getByRole("textbox", { name: "Сообщение" })).toHaveCount(0);
