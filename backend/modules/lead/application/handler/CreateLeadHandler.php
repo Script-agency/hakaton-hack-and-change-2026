@@ -42,7 +42,7 @@ class CreateLeadHandler
             $request->summary,
             LeadStatus::NEW,
             $request->messages,
-            "",
+            null,
         );
 
         $this->transactionManager->run(function () use ($lead): void {

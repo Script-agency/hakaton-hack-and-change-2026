@@ -13,6 +13,7 @@ use modules\lead\application\handler\CreateLeadHandler;
 use modules\lead\presentation\request\CreateLeadRequest;
 use OpenApi\Attributes as OA;
 use Throwable;
+use TypeError;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\di\NotInstantiableException;
@@ -50,7 +51,14 @@ class LeadController extends BaseController
     public function actionCreate(): ItemDto
     {
         $request = new CreateLeadRequest();
-        $request->load(Yii::$app->request->post(), '');
+        try {
+            $request->load(Yii::$app->request->getBodyParams(), '');
+        } catch (TypeError $e) {
+            throw new ValidationException('Invalid request payload', [
+                'body' => ['Invalid field types in request body.'],
+            ]);
+        }
+
         if (!$request->validate()) {
             throw new ValidationException('Validation failed: ', $request->getErrors());
         }

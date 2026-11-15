@@ -120,6 +120,10 @@ class GenerationController extends BaseController
     {
         $fingerprint = trim((string)Yii::$app->request->get('fingerprint', ''));
 
+        if (YII_ENV_DEV && $fingerprint === '') {
+            return $this->chatService->listAllChats();
+        }
+
         if ($fingerprint === '') {
             throw new BadRequestHttpException('Query parameter "fingerprint" is required.');
         }

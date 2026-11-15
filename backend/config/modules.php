@@ -26,4 +26,8 @@ return [
         'class' => 'modules\\generation\\Module',
         'controllerNamespace' => 'modules\\generation\\presentation\\controller',
     ],
+    'admin' => [
+        'class' => 'modules\\admin\\Module',
+        'controllerNamespace' => 'modules\\admin\\presentation\\controller',
+    ],
 ];

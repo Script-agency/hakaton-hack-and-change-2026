@@ -16,11 +16,19 @@ use modules\lead\domain\repository\ILeadRepository;
 use modules\lead\domain\entity\Lead;
 use modules\lead\domain\enum\LeadStatus;
 use modules\lead\domain\valueObject\LeadId;
+use Yii;
 use yii\db\Exception as DbException;
 use yii\db\Query;
 
 class DbLeadRepository implements ILeadRepository
 {
+    /**
+     * @var string[]
+     */
+    private const ALLOWED_ORDER_COLUMNS = [
+        'id', 'company', 'full_name', 'phone', 'status', 'created_at', 'updated_at',
+    ];
+
     /**
      * @throws EntityNotFoundException
      * @throws ValidationException
@@ -76,7 +84,7 @@ class DbLeadRepository implements ILeadRepository
     public function findWithFilters(LeadFiltersDto $filters): array
     {
         $query = $this->buildFilterQuery($filters);
-        $query->orderBy($filters->orderBy ?? ['id' => SORT_ASC]);
+        $query->orderBy($this->buildOrderBy($filters->orderBy));
         $query->limit($filters->limit)->offset($filters->offset);
 
         return array_map([$this, 'hydrate'], $query->all());
@@ -120,6 +128,11 @@ class DbLeadRepository implements ILeadRepository
         $ar->status       = $lead->getStatus()->value;
         $ar->manager_note = $lead->getManagerNote();
 
+        $ar->updated_at = $lead->getUpdatedAt()->format('Y-m-d H:i:s');
+        if ($isNew) {
+            $ar->created_at = $lead->getCreatedAt()->format('Y-m-d H:i:s');
+        }
+
         if (!$ar->save()) {
             throw new RuntimeException(
                 'Failed to save lead: '
@@ -130,6 +143,25 @@ class DbLeadRepository implements ILeadRepository
         if ($isNew) {
             $lead->setId(new LeadId((int)$ar->id));
         }
+    }
+
+    private function buildOrderBy(?string $orderBy): array
+    {
+        if ($orderBy === null || trim($orderBy) === '') {
+            return ['id' => SORT_ASC];
+        }
+
+        if (!preg_match('/^([a-z_]+)(?:\s+(asc|desc))?$/i', trim($orderBy), $m)) {
+            return ['id' => SORT_ASC];
+        }
+
+        $column = strtolower($m[1]);
+        if (!in_array($column, self::ALLOWED_ORDER_COLUMNS, true)) {
+            return ['id' => SORT_ASC];
+        }
+
+        $direction = isset($m[2]) && strtolower($m[2]) === 'desc' ? SORT_DESC : SORT_ASC;
+        return [$column => $direction];
     }
 
     private function buildFilterQuery(LeadFiltersDto $filters): Query
@@ -167,11 +199,7 @@ class DbLeadRepository implements ILeadRepository
      */
     private function hydrate(array $row): Lead
     {
-        $messages = null;
-        if (isset($row['messages']) && $row['messages'] !== '') {
-            $decoded  = json_decode((string)$row['messages'], true);
-            $messages = is_array($decoded) ? $decoded : null;
-        }
+        $messages = $this->decodeMessages($row['messages'] ?? null);
 
         return new Lead(
             new LeadId((int)$row['id']),
@@ -185,5 +213,61 @@ class DbLeadRepository implements ILeadRepository
             new DateTimeImmutable((string)$row['created_at']),
             new DateTimeImmutable((string)$row['updated_at']),
         );
+    }
+
+    /**
+     * TEMP-HACK [#feature-35]: двойное декодирование JSON.
+     *
+     * ПРИЧИНА. В колонке `lead.messages` исторически лежит дважды
+     * закодированный JSON (`"[{\"role\":...}]"`). Источник - старый
+     * LeadAR-бихейвиор + ручной json_encode в DbLeadRepository::save()
+     * Пока такие строки не вычищены миграцией
+     * mXXXXXX_XXXXXX_normalize_lead_messages, читаем «как есть».
+     *
+     * УДАЛИТЬ КОГДА:
+     *   1. Миграция mXXXXXX_XXXXXX_normalize_lead_messages применена на всех env.
+     *   2. `SELECT COUNT(*) FROM lead WHERE JSON_TYPE(messages) = 'STRING'` = 0.
+     *   3. DbLeadRepository::save() больше не вызывает json_encode дважды.
+     *
+     * ПОСЛЕ УДАЛЕНИЯ сигнатура должна стать:
+     *   private function decodeMessages(mixed $raw): ?array
+     *   {
+     *       if ($raw === null || $raw === '') return null;
+     *       return is_array($raw) ? $raw : json_decode($raw, true) ?: null;
+     *   }
+     *
+     * @internal
+     * @deprecated temporary - будет удалён в #feature-35
+     * @internal
+     * @return array<int, mixed>|null
+     */
+    private function decodeMessages(mixed $raw): ?array
+    {
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+        if (is_array($raw)) {
+            return $raw;
+        }
+        if (!is_string($raw)) {
+            return null;
+        }
+
+        $value = $raw;
+        for ($i = 0; $i < 2; $i++) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                return null;
+            }
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+            if (is_string($decoded)) {
+                $value = $decoded;
+                continue;
+            }
+            return null;
+        }
+        return null;
     }
 }
