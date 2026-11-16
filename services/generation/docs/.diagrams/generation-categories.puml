@@ -1,0 +1,73 @@
+@startuml generation-categories
+' Interaction with PHP categories: from request to knowledge selection
+
+skinparam {
+  BackgroundColor #F8F9FA
+  ParticipantBorderColor #2E4053
+  ParticipantFontColor #1A1A2E
+  NoteBorderColor #2E86C1
+  ArrowColor #2E86C1
+}
+
+box "Python Generation Service" #F5F5F5
+  participant "GenerationService" as Service
+  participant "PHPClient" as PhpClient
+  participant "KnowledgeRouter" as Router
+  participant "KnowledgeRetriever" as Retriever
+end box
+
+box "PHP Backend (Yii)" #D4E6F1
+  participant "InternalKnowledgeController" as KnowledgeCtrl
+  participant "KnowledgeService\nPHP" as PhpKnowledge
+  database "MySQL\nknowledge_category" as DB
+end box
+
+== 1. Запрос категорий ==
+Service -> PhpClient: categories()
+PhpClient -> KnowledgeCtrl: GET /interna/v1/knowledge/categories
+KnowledgeCtrl -> PhpKnowledge: listActiveCategories()
+PhpKnowledge -> DB: SELECT * FROM knowledge_category\nWHERE is_active = TRUE\nORDER BY sort_order, name
+DB --> PhpKnowledge: rows
+PhpKnowledge --> KnowledgeCtrl: [{id, parentId, name, slug, description,\n sortOrder, isActive, createdAt, updatedAt}]
+KnowledgeCtrl --> PhpClient: {items: [...]}
+PhpClient --> Service: list[dict]
+
+== 2. Роутинг ==
+Service -> Router: route(query, categories, forced_slugs)
+
+alt forced_slugs заданы
+  Router -> Router: Фильтр по доступным
+  Router --> Service: selected, {mode: "explicit"}
+else Ключевые слова
+  Router -> Router: _norm(query)\n→ scores = {} для каждой категории
+  note right: CATEGORY_KEYWORDS:\n00-reference: расчёт, стоимость, окупаемость...\n10-energy: энерг, тариф, счётчик...\n20-products: продукт, аскуэ, solar...
+  alt score > 0
+    Router -> Router: Ранжирование\nвыбор с max_score и max_score-1
+    Router --> Service: selected, {mode: "keyword", scores}
+  else score == 0
+    Router --> Service: all_available, {mode: "fallback_all", scores}
+  end
+end
+
+== 3. Retrieve по выбранным категориям ==
+Service -> Retriever: retrieve(query, selected_slugs, top_k)
+Retriever -> PhpClient: retrieve(selected_slugs, limit=30)
+PhpClient -> KnowledgeCtrl: POST /interna/v1/knowledge/retrieve\n{categorySlugs, limit}
+KnowledgeCtrl -> PhpKnowledge: retrieve(category_slugs, limit)
+
+== 4. Получение ID категорий с потомками ==
+PhpKnowledge -> PhpKnowledge: categoryIdsWithDescendants(slugs)
+PhpKnowledge -> DB: Найти корневые ID по слагам
+PhpKnowledge -> DB: Рекурсивно найти активных потомков\n(BFS, защита от дубликатов)
+DB --> PhpKnowledge: [all_category_ids]
+
+== 5. JOIN и фильтрация ==
+PhpKnowledge -> DB: SELECT p.*, d.title as documentTitle,\nd.original_filename, d.extension, ...\nFROM knowledge_part p\nJOIN knowledge_document d ON d.id = p.document_id\nWHERE p.category_id IN (:ids)\nAND p.is_active = TRUE\nAND d.status = 'published'\nAND d.deleted_at IS NULL
+DB --> PhpKnowledge: [{id, documentId, title, locatorType,\n locator, content?, ...}]
+
+== 6. Проверка кэша и размера ==
+PhpKnowledge -> PhpKnowledge: Для каждой части —\nпроверка Redis-кэша\nи лимита maxEntryBytes
+PhpKnowledge --> KnowledgeCtrl: items с inline content\nили ссылками на файл
+KnowledgeCtrl --> PhpClient: {items: [...]}
+
+@enduml

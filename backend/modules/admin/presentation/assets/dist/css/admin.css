@@ -1,0 +1,105 @@
+/* Palette is shared with the widget (frontend/src/shared/styles/colors.scss) */
+:root {
+    --color-brand: #e30611;
+    --color-brand-hover: #c90510;
+    --color-brand-soft: #fdecee;
+    --color-on-brand: #ffffff;
+    --color-canvas: #f5f4ee;
+    --color-background: #ffffff;
+    --color-surface: #f1f3f6;
+    --color-surface-muted: #f6f7f9;
+    --color-text: #1a1a1a;
+    --color-text-secondary: #5f6670;
+    --color-icon: #4b5563;
+    --color-border: #e4e6ea;
+    --color-border-subtle: #eef0f3;
+    --color-border-strong: #c7cdd5;
+    --color-success: #0e6b3a;
+    --color-success-background: #e6f4ea;
+    --color-error: #b42318;
+    --color-error-background: #fdecea;
+}
+
+body {
+    font-family: system-ui, sans-serif;
+    color: var(--color-text);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--color-text-secondary);
+    opacity: 1;
+}
+
+.nav-tab-btn {
+    color: var(--color-text-secondary);
+}
+
+.nav-tab-btn:not(.active):hover {
+    background: var(--color-surface);
+    color: var(--color-text);
+}
+
+.nav-tab-btn:not(.active):hover .nav-badge {
+    background: var(--color-background);
+}
+
+.nav-tab-btn.active {
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+}
+
+.nav-badge {
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+}
+
+.nav-tab-btn.active .nav-badge {
+    background: rgba(255, 255, 255, 0.22);
+    color: var(--color-on-brand);
+}
+
+button {
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, filter 0.15s;
+}
+
+button:not(:disabled) {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+}
+
+button:focus-visible {
+    outline: 3px solid var(--color-brand);
+    outline-offset: 2px;
+}
+
+input[aria-invalid="true"] {
+    border-color: var(--color-error);
+}
+
+input[aria-invalid="true"]:focus {
+    border-color: var(--color-error);
+    --tw-ring-color: var(--color-error);
+}
+
+/* Тонкие аккуратные скроллбары */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-icon);
+}

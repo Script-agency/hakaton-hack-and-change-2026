@@ -1,0 +1,195 @@
+services:
+  # -------------------- PostgreSQL --------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: hackaton-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hackaton}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-hackaton}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - hackaton-net
+
+  # -------------------- Redis --------------------
+  redis:
+    image: redis:7-alpine
+    container_name: hackaton-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - hackaton-net
+
+  # -------------------- PHP-FPM (Yii2 Backend) --------------------
+  php-fpm:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    container_name: hackaton-php-fpm
+    restart: unless-stopped
+    environment:
+      # ---- Application ----
+      APP_ENV: ${APP_ENV:-dev}
+      APP_DEBUG: ${APP_DEBUG:-true}
+      DEBUG_LVL: ${DEBUG_LVL:-3}
+      APP_NAME: ${APP_NAME:-"Script Agency Energytool"}
+      APP_URL: ${APP_URL:-"http://localhost:8080"}
+      COOKIE_VALIDATION_KEY: ${COOKIE_VALIDATION_KEY:-"docker-dev-key-change-in-production"}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      SENDER_EMAIL: ${SENDER_EMAIL:-noreply@example.com}
+      SENDER_NAME: ${SENDER_NAME:-Script Agency Energytool}
+
+      # ---- Frontend ----
+      FRONTEND_URL: ${FRONTEND_URL:-"http://localhost"}
+
+      # ---- Database — composed from POSTGRES_* ----
+      DB_DSN: "pgsql:host=postgres;port=5432;dbname=${POSTGRES_DB:-hackaton}"
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+
+      # ---- Redis ----
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+
+      # ---- AI Provider ----
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_HTTP_TIMEOUT: ${AI_HTTP_TIMEOUT:-300}
+      AI_CONNECT_TIMEOUT: ${AI_CONNECT_TIMEOUT:-15}
+      AI_MAX_RETRIES: ${AI_MAX_RETRIES:-2}
+
+      # ---- Knowledge Base ----
+      KNOWLEDGE_STORAGE_PATH: /app/storage/knowledge
+      KNOWLEDGE_MAX_FILE_SIZE: ${KNOWLEDGE_MAX_FILE_SIZE:-20971520}
+      KNOWLEDGE_MAX_PART_SIZE: ${KNOWLEDGE_MAX_PART_SIZE:-1048576}
+      KNOWLEDGE_MAX_INLINE_PART_BYTES: ${KNOWLEDGE_MAX_INLINE_PART_BYTES:-262144}
+      KNOWLEDGE_REDIS_TTL: ${KNOWLEDGE_REDIS_TTL:-3600}
+      GENERATION_SERVICE_URL: ${GENERATION_SERVICE_URL:-http://generation:8000}
+      GENERATION_HTTP_TIMEOUT: ${GENERATION_HTTP_TIMEOUT:-180}
+      GENERATION_CONNECT_TIMEOUT: ${GENERATION_CONNECT_TIMEOUT:-5}
+    volumes:
+      - backend_runtime:/app/runtime
+      # Mount source for development (hot-reload PHP changes)
+      - ./backend/runtime:/app/runtime:delegated
+      - ./backend/storage:/app/storage:delegated
+      - ./backend/web:/app/web:delegated
+      - ./backend/config:/app/config:delegated
+      - ./backend/core:/app/core:delegated
+      - ./backend/modules:/app/modules:delegated
+      - ./backend/commands:/app/commands:delegated
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - hackaton-net
+
+  # -------------------- Nginx (Backend Proxy) --------------------
+  nginx-backend:
+    image: nginx:alpine
+    container_name: hackaton-nginx-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8080}:80"
+    volumes:
+      - ./docker/backend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./backend/web:/app/web:ro
+    depends_on:
+      - php-fpm
+    networks:
+      - hackaton-net
+
+  # -------------------- Python Generation Service --------------------
+  generation:
+    build:
+      context: .
+      dockerfile: services/generation/Dockerfile
+    container_name: hackaton-generation
+    restart: unless-stopped
+    environment:
+      # PHP backend URL inside Docker network
+      PHP_INTERNAL_API_URL: ${PHP_INTERNAL_API_URL:-http://nginx-backend}
+
+      # Auth token for internal service calls (MUST be set in production)
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-NOT_A_TOKEN_SUKA}
+
+      # HTTP timeouts
+      PHP_HTTP_TIMEOUT: ${PHP_HTTP_TIMEOUT:-60}
+      PHP_AI_GATEWAY_TIMEOUT: ${PHP_AI_GATEWAY_TIMEOUT:-180}
+
+      # Generation / knowledge parameters
+      GENERATION_TOP_K: ${GENERATION_TOP_K:-6}
+      GENERATION_MAX_CONTEXT_CHARS: ${GENERATION_MAX_CONTEXT_CHARS:-24000}
+      GENERATION_CHUNK_SIZE_CHARS: ${GENERATION_CHUNK_SIZE_CHARS:-3500}
+      GENERATION_CHUNK_OVERLAP_CHARS: ${GENERATION_CHUNK_OVERLAP_CHARS:-350}
+      GENERATION_KNOWLEDGE_LIMIT: ${GENERATION_KNOWLEDGE_LIMIT:-30}
+      GENERATION_LOG_FILE: /app/logs/generation.log
+      GENERATION_LOG_LEVEL: INFO
+      GENERATION_LOG_MAX_BYTES: 10485760
+      GENERATION_LOG_BACKUP_COUNT: 10
+
+    ports:
+      - "${GENERATION_PORT:-8000}:8000"
+    volumes:
+      - ./services/generation/scripts:/app/scripts:ro
+      - ./services/generation/data:/app/data:ro
+      - ./services/generation/logs:/app/logs
+    depends_on:
+      nginx-backend:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - hackaton-net
+
+  # -------------------- Nginx (Frontend Static) --------------------
+  nginx-frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    container_name: hackaton-nginx-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - nginx-backend
+    networks:
+      - hackaton-net
+
+networks:
+  hackaton-net:
+    driver: bridge
+    name: hackaton-net
+
+volumes:
+  postgres_data:
+    name: hackaton-postgres-data
+  backend_runtime:
+    name: hackaton-backend-runtime

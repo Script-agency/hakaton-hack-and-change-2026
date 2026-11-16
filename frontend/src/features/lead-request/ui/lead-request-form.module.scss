@@ -1,0 +1,42 @@
+.form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.intro {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--color-text-secondary);
+}
+
+.error {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--color-error);
+}
+
+.footer {
+  flex-shrink: 0;
+  padding: 8px 12px 12px;
+}
+
+.submit {
+  width: 100%;
+
+  &:disabled {
+    cursor: default;
+    background: var(--color-brand-disabled);
+  }
+}

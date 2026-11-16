@@ -1,0 +1,22 @@
+# Ignore .env files (production secrets should not be in images)
+.env
+backend/.env
+
+# Ignore vendor — will be installed inside container
+backend/vendor/
+
+# Ignore node_modules
+frontend/node_modules/
+
+# Ignore IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Ignore logs and runtime caches
+backend/runtime/
+
+# Ignore git
+.git/
+.gitignore

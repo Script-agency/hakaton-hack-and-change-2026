@@ -1,0 +1,305 @@
+/* Only the demo host page uses these styles. Widget styles stay in Shadow DOM. */
+@font-face {
+  font-family: "MTS Text";
+  src: url("./assets/mts-text-regular.woff2") format("woff2");
+  font-display: swap;
+}
+@font-face {
+  font-family: "MTS Wide";
+  src: url("./assets/mts-wide-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "MTS Wide";
+  src: url("./assets/mts-wide-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: dark;
+  --demo-background: #000;
+  --demo-text: #fff;
+  --demo-muted: #969fa8;
+  --demo-brand: #ff0032;
+  --demo-brand-hover: #e0002d;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--demo-background);
+  color: var(--demo-text);
+  font-family: "MTS Text", Arial, sans-serif;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  font: inherit;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--demo-text);
+  outline-offset: 5px;
+}
+.container {
+  width: 100%;
+  max-width: 1304px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+.site-header {
+  position: relative;
+  z-index: 10;
+  height: 64px;
+  background: var(--demo-background);
+}
+.navigation {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+}
+.mts-logo {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--demo-brand);
+  font:
+    700 12px/1 Arial,
+    sans-serif;
+  padding: 2px;
+}
+.mts-logo span:nth-child(2) {
+  text-align: right;
+}
+.mts-logo span:last-child {
+  grid-column: 2;
+  align-self: end;
+  text-align: right;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 52px;
+  margin-left: 84px;
+  color: var(--demo-muted);
+  font-size: 16px;
+}
+.nav-links a:hover,
+.cart:hover {
+  color: var(--demo-text);
+}
+.services-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.chevron {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+}
+.nav-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 36px;
+  align-items: center;
+}
+.cart {
+  display: flex;
+  color: var(--demo-muted);
+}
+.cart svg {
+  width: 28px;
+  height: 28px;
+}
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 14px 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 24px;
+  cursor: pointer;
+  text-align: center;
+}
+.button-primary {
+  background: var(--demo-brand);
+  color: var(--demo-text);
+}
+.button-primary:hover {
+  background: var(--demo-brand-hover);
+}
+.login {
+  min-height: 44px;
+  padding: 10px 24px;
+}
+.button-outline {
+  background: transparent;
+  border-color: var(--demo-text);
+}
+.button-outline:hover {
+  background: var(--demo-text);
+  color: var(--demo-background);
+}
+.hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: calc(100svh - 64px);
+  padding-block: 60px;
+  background: var(--demo-background) url("./assets/energytool-hero.png") right center / auto 100% no-repeat;
+}
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+h1 {
+  max-width: 1040px;
+  margin: 0;
+  font:
+    700 32px/1 "MTS Wide",
+    Arial,
+    sans-serif;
+  text-transform: uppercase;
+}
+h2 {
+  max-width: 745px;
+  margin: 20px 0 0;
+  font:
+    500 20px/28px "MTS Wide",
+    Arial,
+    sans-serif;
+}
+.description {
+  max-width: 650px;
+  margin: 32px 0 0;
+  font-size: 16px;
+  line-height: 24px;
+}
+.hero-actions {
+  display: flex;
+  gap: 40px;
+  margin-top: 48px;
+}
+.award {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 60px;
+  color: var(--demo-muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+.demo-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-block: 32px 100px;
+  font-size: 14px;
+  color: var(--demo-muted);
+}
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.demo-controls button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+@media (max-width: 1100px) {
+  .hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--demo-background);
+    opacity: 0.65;
+  }
+  .award {
+    z-index: 1;
+  }
+  .nav-links {
+    margin-left: 48px;
+    gap: 32px;
+  }
+}
+@media (max-width: 640px) {
+  .brand {
+    font-size: 14px;
+  }
+  .nav-links,
+  .cart {
+    display: none;
+  }
+  .nav-actions {
+    gap: 0;
+  }
+  .login {
+    min-height: 40px;
+    padding: 8px 16px;
+    font-size: 16px;
+  }
+  .hero {
+    min-height: calc(100svh - 64px);
+    padding-block: 72px 140px;
+    background-position: 65% center;
+  }
+  h1 {
+    font-size: 26px;
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+  }
+  .desktop-break {
+    display: none;
+  }
+  h2 {
+    font-size: 20px;
+    line-height: 26px;
+  }
+  .description {
+    margin-top: 28px;
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .hero-actions {
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 32px;
+    align-items: stretch;
+  }
+  .button {
+    font-size: 16px;
+    padding-inline: 20px;
+  }
+  .award {
+    bottom: 32px;
+    font-size: 12px;
+    line-height: 18px;
+    padding-right: 80px;
+  }
+}

@@ -1,0 +1,28 @@
+:host {
+  --color-brand: #e30611;
+  --color-white: #fff;
+  --color-canvas: #f5f4ee;
+  --color-surface: #f1f3f6;
+  --color-surface-muted: #f6f7f9;
+  --color-text: #1a1a1a;
+  --color-text-secondary: #5f6670;
+  --color-icon: #4b5563;
+  --color-border: #e4e6ea;
+  --color-border-subtle: #eef0f3;
+  --color-border-strong: #c7cdd5;
+  --color-success: #0e6b3a;
+  --color-success-background: #e6f4ea;
+
+  --color-brand-hover: #c90510;
+  --color-brand-disabled: #f6b8bc;
+  --color-error: #b42318;
+  --color-transparent: transparent;
+  --color-shadow-launcher: rgb(0 0 0 / 18%);
+  --color-shadow-screen: rgb(0 0 0 / 10%);
+  --color-screen-scrim: rgb(0 0 0 / 20%);
+  --color-shadow-panel: rgb(0 0 0 / 16%);
+
+  --color-background: var(--color-white);
+  --color-on-brand: var(--color-white);
+  --color-focus: var(--color-brand);
+}

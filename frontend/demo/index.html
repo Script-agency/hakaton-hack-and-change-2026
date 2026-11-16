@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ENERGYTOOL — демо ИИ-помощника</title>
+    <link rel="stylesheet" href="./energytool.css" />
+    <script src="http://localhost:8080/admin/widget"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="container navigation" aria-label="Основная навигация">
+        <a class="brand" href="#" aria-label="МТС ENERGYTOOL — главная">
+          <span class="mts-logo" aria-hidden="true"><span>М</span><span>Т</span><span>С</span></span>
+          <span>ENERGYTOOL</span>
+        </a>
+        <div class="nav-links">
+          <a class="services-link" href="https://energytool.mts.ru/" target="_blank" rel="noopener noreferrer"
+            >Услуги <span class="chevron" aria-hidden="true"></span
+          ></a>
+          <a href="https://energytool.mts.ru/shop" target="_blank" rel="noopener noreferrer">Магазин</a>
+        </div>
+        <div class="nav-actions">
+          <a
+            class="cart"
+            href="https://energytool.mts.ru/cart"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Корзина"
+          >
+            <svg
+              viewBox="0 0 32 32"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M4 12h24l-2 14a3 3 0 0 1-3 2H9a3 3 0 0 1-3-2L4 12Zm6 0 4-7m8 7-4-7M12 17v5m8-5v5M2 12h28" />
+            </svg>
+          </a>
+          <a
+            class="button button-primary login"
+            href="https://lk.energytool.mts.ru/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Войти</a
+          >
+        </div>
+      </nav>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="container hero-content">
+          <h1 id="hero-title">
+            Сервис цифровизации энергетики и учёта<br class="desktop-break" />
+            энергоресурсов от EnergyTool
+          </h1>
+          <h2>Лучшие решения на рынке энергетических услуг *</h2>
+          <p class="description">
+            Комплекс программных решений, которые помогут оптимизировать энергетические расходы вашей организации,
+            выявить подозрительную активность абонентов и автоматизировать процессы сбора и анализа данных
+          </p>
+          <div class="hero-actions">
+            <button class="button button-primary" id="consultation" type="button">Заказать консультацию</button>
+            <a
+              class="button button-outline"
+              href="https://lk.energytool.mts.ru/"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Войти в кабинет</a
+            >
+          </div>
+        </div>
+        <div class="container award">* По версии премии ComNews Awards 2023 и «Цифровые вершины 2021»</div>
+      </section>
+    </main>
+    <script src="../widget.js"></script>
+    <script>
+      const mountWidget = () => {
+        EnergyToolAssistant.unmount();
+        EnergyToolAssistant.mount({ debug: true });
+      };
+      mountWidget();
+    </script>
+  </body>
+</html>

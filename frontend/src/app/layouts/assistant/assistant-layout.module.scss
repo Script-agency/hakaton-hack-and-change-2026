@@ -1,0 +1,71 @@
+.layout {
+  --launcher-size: 56px;
+  --panel-gap: 12px;
+
+  position: relative;
+  width: var(--launcher-size);
+  height: var(--launcher-size);
+}
+
+.launcher {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 2;
+  display: grid;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  place-items: center;
+
+  &:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 4px;
+  }
+}
+
+.launcher {
+  width: var(--launcher-size);
+  height: var(--launcher-size);
+  border-radius: 50%;
+  color: var(--color-on-brand);
+  background: var(--color-brand);
+  box-shadow: 0 6px 24px var(--color-shadow-launcher);
+
+  &:hover {
+    background: var(--color-brand-hover);
+  }
+}
+
+.panel {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--launcher-size) + var(--panel-gap));
+  z-index: 1;
+  visibility: hidden;
+  transform-origin: bottom right;
+  display: flex;
+  flex-direction: column;
+  width: min(360px, calc(100vw - max(16px, env(safe-area-inset-right)) - max(16px, env(safe-area-inset-left))));
+  height: min(
+    520px,
+    calc(
+      100dvh - max(16px, env(safe-area-inset-bottom)) - max(16px, env(safe-area-inset-top)) - var(
+          --launcher-size
+        ) - var(--panel-gap)
+    )
+  );
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  background: var(--color-background);
+  box-shadow: 0 12px 48px var(--color-shadow-panel);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}

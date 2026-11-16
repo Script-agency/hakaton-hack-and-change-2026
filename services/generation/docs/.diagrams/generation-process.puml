@@ -1,0 +1,81 @@
+@startuml generation-process
+' Internal generation process: from request to answer
+
+skinparam {
+  BackgroundColor #F8F9FA
+  ParticipantBorderColor #2E4053
+  ParticipantFontColor #1A1A2E
+  NoteBorderColor #2E86C1
+  ArrowColor #2E86C1
+}
+
+box "Python Generation Service" #F5F5F5
+  participant "GenerationService\nanswer()" as Service
+  participant "KnowledgeRouter\nroute()" as Router
+  participant "KnowledgeRetriever\nretrieve()" as Retriever
+  participant "Extractors\nextract_document / extract_part" as Extractors
+  participant "BM25\nранжирование" as BM25
+  participant "PHPClient" as PhpClient
+end box
+
+box "PHP Backend (Yii)" #D4E6F1
+  participant "Knowledge API" as KnowledgeApi
+  participant "AI Gateway" as AiGateway
+end box
+
+== A. Роутинг ==
+Service -> Router: route(question, categories, forced?)
+note right: #1 Ключевые слова\n#2 Название/описание категории\n#3 fallback — все активные
+
+Router --> Service: selected_slugs, routing_info
+
+== B. Получение кандидатов ==
+Service -> Retriever: retrieve(question, slugs, top_k)
+Retriever -> PhpClient: retrieve(slugs, limit=30)
+PhpClient -> KnowledgeApi: POST /interna/v1/knowledge/retrieve
+KnowledgeApi --> PhpClient: [{category, documentId, content?,\n contentUrl, documentUrl, locator, ...}]
+PhpClient --> Retriever: items (candidates)
+
+== C. Загрузка и экстракция контента ==
+group Для каждого кандидата
+  alt Есть inline content
+    Retriever -> Retriever: Используем как есть
+  else contentUrl (уже текст)
+    Retriever -> PhpClient: fetch_bytes(contentUrl)
+    PhpClient -> KnowledgeApi: GET .../content
+    KnowledgeApi --> PhpClient: text content
+    PhpClient --> Retriever: content string
+  else documentUrl (нужен парсинг)
+    Retriever -> PhpClient: fetch_bytes(documentUrl)
+    PhpClient -> KnowledgeApi: GET .../file
+    KnowledgeApi --> PhpClient: raw bytes
+    PhpClient --> Retriever: bytes
+    Retriever -> Extractors: extract_document(bytes, extension)
+    Extractors --> Retriever: full_text
+    Retriever -> Extractors: extract_part(full_text, ext, locator_type, locator)
+    Extractors --> Retriever: part_text
+  end
+  Retriever -> PhpClient: cache_part(part, text)
+  note right: Асинхронный кэш —\nошибка не фатальна
+end
+
+== D. Чанкинг и BM25 ==
+Retriever -> Retriever: _split_chunks(content)\n(3500 символов, 350 перекрытие)
+Retriever -> BM25: BM25Okapi(corpus + query_tokens)
+BM25 --> Retriever: ranked chunks
+
+== E. Сборка контекста ==
+Retriever -> Retriever: Формируем contexts[]\n(до max_context_chars)
+Retriever --> Service: context_str, sources[], debug
+
+== F. Вызов AI ==
+Service -> Service: Собираем system_prompt\n(SYSTEM_PROMPT + <knowledge_context>)
+Service -> PhpClient: chat(system_prompt, messages)
+PhpClient -> AiGateway: POST /ai/chat
+AiGateway --> PhpClient: {content, finishReason, usage}
+PhpClient --> Service: AI result
+
+== G. Формирование ответа ==
+Service -> Service: {answer, sources, routing,\n debug? (retrieval, ai)}
+
+@enduml
