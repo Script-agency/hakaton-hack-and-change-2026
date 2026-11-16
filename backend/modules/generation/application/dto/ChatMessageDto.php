@@ -12,6 +12,7 @@ class ChatMessageDto implements \JsonSerializable
      * @param string $role
      * @param string $content
      * @param string $created_at
+     * @param array<int, mixed> $sources
      */
     public function __construct(
         public readonly int $id,
@@ -19,9 +20,11 @@ class ChatMessageDto implements \JsonSerializable
         public readonly string $role,
         public readonly string $content,
         public readonly string $created_at,
+        public readonly array $sources = [],
     ) {
     }
 
+    /** @return array<string, mixed> */
     public function jsonSerialize(): array
     {
         return [
@@ -30,6 +33,7 @@ class ChatMessageDto implements \JsonSerializable
             'role'       => $this->role,
             'content'    => $this->content,
             'created_at' => $this->created_at,
+            'sources'    => $this->sources,
         ];
     }
 }

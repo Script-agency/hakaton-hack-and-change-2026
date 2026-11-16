@@ -17,6 +17,8 @@ use yii\db\ActiveRecord;
  * @property string|null $manager_note
  * @property string $created_at
  * @property string $updated_at
+ * @property string|null $fingerprint
+ * @property int|null $conversation_id
  */
 class LeadAR extends ActiveRecord
 {

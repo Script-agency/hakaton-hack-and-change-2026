@@ -9,6 +9,8 @@ use yii\db\ActiveRecord;
 /**
  * @property int $id
  * @property string $fingerprint
+ * @property bool $is_completed
+ * @property string|null $summary
  * @property string $created_at
  */
 class GenerationChatAR extends ActiveRecord

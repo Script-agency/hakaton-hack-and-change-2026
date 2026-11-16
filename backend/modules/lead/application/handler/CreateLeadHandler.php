@@ -43,6 +43,8 @@ class CreateLeadHandler
             LeadStatus::NEW,
             $request->messages,
             null,
+            fingerprint: $request->fingerprint,
+            conversationId: $request->conversationId,
         );
 
         $this->transactionManager->run(function () use ($lead): void {

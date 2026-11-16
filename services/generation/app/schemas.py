@@ -20,6 +20,8 @@ class ChatHistory(BaseModel):
     id: int | str | None = None
     fingerprint: str | None = None
     created_at: str | None = None
+    is_completed: bool = False
+    summary: str | None = None
     messages: list[Message] = Field(default_factory=list, max_length=200)
 
 
@@ -57,4 +59,6 @@ class GenerationResponse(BaseModel):
     answer: str
     sources: list[Source]
     routing: dict
+    is_completed: bool = False
+    summary: str | None = None
     debug: dict | None = None

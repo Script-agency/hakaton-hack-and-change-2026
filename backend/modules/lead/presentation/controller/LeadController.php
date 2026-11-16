@@ -51,8 +51,18 @@ class LeadController extends BaseController
     public function actionCreate(): ItemDto
     {
         $request = new CreateLeadRequest();
+        $body = Yii::$app->request->getBodyParams();
+        if (array_key_exists('conversation_id', $body)) {
+            $conversationId = $body['conversation_id'];
+            if ($conversationId === null || (is_string($conversationId) && trim($conversationId) === '')) {
+                $body['conversation_id'] = null;
+            } elseif (is_int($conversationId) || (is_string($conversationId) && ctype_digit($conversationId))) {
+                $body['conversation_id'] = (int)$conversationId;
+            }
+        }
+
         try {
-            $request->load(Yii::$app->request->getBodyParams(), '');
+            $request->load($body, '');
         } catch (TypeError $e) {
             throw new ValidationException('Invalid request payload', [
                 'body' => ['Invalid field types in request body.'],
@@ -69,6 +79,8 @@ class LeadController extends BaseController
             phone:    new Phone($request->phone),
             summary:  $request->summary,
             messages: $request->messages,
+            fingerprint: $request->fingerprint,
+            conversationId: $request->conversation_id,
         );
 
         $handler = Yii::$container->get(CreateLeadHandler::class);

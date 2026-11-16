@@ -14,12 +14,15 @@ class CreateLeadRequest extends Model
     public ?string $summary     = null;
 
     /**
-     * История сообщений с AI-агентом.
-     * Приходит как массив (JSON body array) либо null.
+     * История сообщений с AI-агентом (оставлена для обратной совместимости).
+     * Новые интеграции должны передавать conversation_id.
      *
+     * @deprecated Используйте conversation_id и generation_chat_message.
      * @var array<int, mixed>|null
      */
     public ?array $messages = null;
+    public ?string $fingerprint = null;
+    public ?int $conversation_id = null;
 
     public function rules(): array
     {
@@ -39,6 +42,12 @@ class CreateLeadRequest extends Model
 
             ['messages', 'default', 'value' => null],
             ['messages', 'validateMessages'],
+
+            ['fingerprint', 'default', 'value' => null],
+            ['fingerprint', 'string', 'max' => 255],
+            ['fingerprint', 'filter', 'filter' => 'trim'],
+            ['conversation_id', 'default', 'value' => null],
+            ['conversation_id', 'integer', 'min' => 1],
         ];
     }
 
@@ -60,7 +69,9 @@ class CreateLeadRequest extends Model
             'full_name' => 'ФИО контактного лица',
             'phone'     => 'Телефон',
             'summary'   => 'Резюме диалога',
-            'messages'  => 'История сообщений',
+            'messages'  => 'История сообщений (deprecated)',
+            'fingerprint' => 'Fingerprint диалога',
+            'conversation_id' => 'ID диалога',
         ];
     }
 }
