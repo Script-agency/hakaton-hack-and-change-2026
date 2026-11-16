@@ -5,5 +5,5 @@ export const parseChatId = (value: string | undefined): number | undefined => {
 
   const id = Number(value);
 
-  return Number.isSafeInteger(id) ? id : undefined;
+  return Number.isSafeInteger(id) && id > 0 ? id : undefined;
 };

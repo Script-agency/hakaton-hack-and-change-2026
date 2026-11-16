@@ -76,30 +76,12 @@
         <div class="container award">* По версии премии ComNews Awards 2023 и «Цифровые вершины 2021»</div>
       </section>
     </main>
-    <footer class="container demo-footer">
-      <span>Демонстрационная страница для ИИ-помощника ENERGYTOOL</span>
-      <div class="demo-controls">
-        <button id="unmount" type="button">Отключить виджет</button>
-        <button id="remount" type="button">Подключить заново</button>
-      </div>
-    </footer>
     <script src="../widget.js"></script>
     <script>
       const mountWidget = () => {
         EnergyToolAssistant.unmount();
         EnergyToolAssistant.mount({ debug: true });
       };
-      document.getElementById("unmount").addEventListener("click", () => {
-        EnergyToolAssistant.unmount();
-      });
-      document.getElementById("remount").addEventListener("click", mountWidget);
-      document.getElementById("consultation").addEventListener("click", () => {
-        for (const element of document.body.children) {
-          if (element.shadowRoot?.querySelector("[data-widget-root]")) {
-            element.shadowRoot?.querySelector("button[aria-expanded='false']")?.click();
-          }
-        }
-      });
       mountWidget();
     </script>
   </body>

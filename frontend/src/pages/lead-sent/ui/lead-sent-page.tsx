@@ -14,7 +14,7 @@ export const LeadSentPage = ({ onNewChat }: LeadSentPageProps) => {
           <Check size={36} strokeWidth={2.5} />
         </div>
         <h2 className={styles.title}>Заявка отправлена</h2>
-        <p className={styles.description}>Менеджер свяжется с вами в рабочее время. Резюме диалога уже передано.</p>
+        <p className={styles.description}>Менеджер свяжется с вами в рабочее время. Ваша заявка уже передана.</p>
 
         <button className={styles.action} onClick={onNewChat} title="Новый чат" type="button">
           Новый чат

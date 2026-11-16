@@ -1,67 +1,39 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import type { CreateLeadRequest } from "@entities/lead/types";
 
 import { Button, TextField } from "@shared/ui";
 
-import { formatPhone, validateLeadRequest } from "../lib";
-import type { LeadRequestValues } from "../types";
+import { useLeadRequest } from "../hooks";
 import styles from "./lead-request-form.module.scss";
 
 interface LeadRequestFormProps {
-  onSubmit: (values: LeadRequestValues) => void;
-  summary: string;
+  conversation: Pick<CreateLeadRequest, "conversationId" | "fingerprint" | "summary">;
+  isActive: boolean;
+  onSuccess: () => void;
 }
 
-type TouchedFields = Partial<Record<keyof LeadRequestValues, boolean>>;
-
-const initialValues: LeadRequestValues = {
-  company: "",
-  fullName: "",
-  phone: "",
-};
-
-export const LeadRequestForm = ({ onSubmit, summary }: LeadRequestFormProps) => {
-  const [values, setValues] = useState(initialValues);
-  const [touched, setTouched] = useState<TouchedFields>({});
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const errors = validateLeadRequest(values);
-
-  const getError = (field: keyof LeadRequestValues) => {
-    return isSubmitted || touched[field] === true ? errors[field] : undefined;
-  };
-
-  const handleChange = (field: keyof LeadRequestValues) => (event: ChangeEvent<HTMLInputElement>) => {
-    const value = field === "phone" ? formatPhone(event.target.value) : event.target.value;
-
-    setValues((previous) => ({ ...previous, [field]: value }));
-  };
-
-  const handleBlur = (field: keyof LeadRequestValues) => () => {
-    setTouched((previous) => ({ ...previous, [field]: true }));
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSubmitted(true);
-
-    if (Object.keys(errors).length > 0) {
-      return;
-    }
-
-    onSubmit({
-      company: values.company.trim(),
-      fullName: values.fullName.trim(),
-      phone: values.phone,
-    });
-  };
+export const LeadRequestForm = ({ conversation, isActive, onSuccess }: LeadRequestFormProps) => {
+  const { values, getError, handleChange, handleBlur, handleSubmit, isPending, errorMessage } = useLeadRequest({
+    conversation,
+    isActive,
+    onSuccess,
+  });
 
   return (
-    <form className={styles.form} noValidate onSubmit={handleSubmit}>
+    <form
+      aria-busy={isPending}
+      aria-label="Заявка менеджеру"
+      className={styles.form}
+      noValidate
+      onSubmit={handleSubmit}
+    >
       <div className={styles.body}>
         <p className={styles.intro}>Оставьте контакты — менеджер свяжется с вами и уже будет знать суть разговора.</p>
         <TextField
           autoComplete="name"
+          disabled={!isActive || isPending}
           error={getError("fullName")}
           label="ФИО"
+          maxLength={255}
           name="fullName"
           onBlur={handleBlur("fullName")}
           onChange={handleChange("fullName")}
@@ -70,6 +42,7 @@ export const LeadRequestForm = ({ onSubmit, summary }: LeadRequestFormProps) => 
         />
         <TextField
           autoComplete="tel"
+          disabled={!isActive || isPending}
           error={getError("phone")}
           inputMode="tel"
           label="Телефон"
@@ -82,20 +55,25 @@ export const LeadRequestForm = ({ onSubmit, summary }: LeadRequestFormProps) => 
         />
         <TextField
           autoComplete="organization"
+          disabled={!isActive || isPending}
           error={getError("company")}
           label="Компания"
+          maxLength={255}
           name="company"
           onBlur={handleBlur("company")}
           onChange={handleChange("company")}
           placeholder="ООО «Пример»"
           value={values.company}
         />
-        <span className={styles.summaryLabel}>Резюме для менеджера</span>
-        <p className={styles.summary}>{summary}</p>
+        {errorMessage !== undefined ? (
+          <p className={styles.error} role="alert">
+            {errorMessage}
+          </p>
+        ) : null}
       </div>
       <div className={styles.footer}>
-        <Button className={styles.submit} type="submit">
-          Отправить заявку
+        <Button className={styles.submit} disabled={!isActive || isPending} type="submit">
+          {isPending ? "Отправляю заявку…" : "Отправить заявку"}
         </Button>
       </div>
     </form>

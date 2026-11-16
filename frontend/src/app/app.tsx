@@ -1,25 +1,42 @@
-import { ChatPage, StartPage } from "@pages/chat";
+import { ChatPage } from "@pages/chat";
 import { HistoryPage } from "@pages/history";
 import { LeadPage } from "@pages/lead";
 import { LeadSentPage } from "@pages/lead-sent";
 
 import { AssistantLayout } from "./layouts/assistant";
+import { ChatLayout } from "./layouts/chat";
+import { HistoryLayout } from "./layouts/history";
+import { LeadLayout } from "./layouts/lead";
 import { ScreenStack, type ScreenRoute } from "./navigation";
 import styles from "./styles/root.module.scss";
 
 const screenRoutes: ScreenRoute[] = [
-  { path: "/", stack: "root", render: ({ isActive }) => <StartPage isActive={isActive} /> },
   {
-    path: "/chats/:id",
-    stack: "screen",
-    render: ({ isActive, onBack }) => <ChatPage isActive={isActive} onBack={onBack} />,
+    render: ({ onBack }) => <ChatLayout onBack={onBack} />,
+    children: [
+      { path: "/", stack: "root", render: ({ isActive }) => <ChatPage isActive={isActive} /> },
+      {
+        path: "/chats/:id",
+        stack: "screen",
+        render: ({ isActive }) => <ChatPage isActive={isActive} />,
+      },
+    ],
   },
   {
-    path: "/history",
-    stack: "screen",
-    render: ({ isActive, onBack }) => <HistoryPage isActive={isActive} onBack={onBack} />,
+    render: ({ onBack }) => <HistoryLayout onBack={onBack} />,
+    children: [{ path: "/history", stack: "screen", render: ({ isActive }) => <HistoryPage isActive={isActive} /> }],
   },
-  { path: "/lead", stack: "screen", direction: "right", render: ({ onBack }) => <LeadPage onBack={onBack} /> },
+  {
+    render: ({ onBack }) => <LeadLayout onBack={onBack} />,
+    children: [
+      {
+        path: "/lead",
+        stack: "screen",
+        direction: "right",
+        render: ({ isActive }) => <LeadPage isActive={isActive} />,
+      },
+    ],
+  },
   {
     path: "/lead/sent",
     stack: "screen",

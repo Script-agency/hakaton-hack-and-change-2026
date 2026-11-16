@@ -1,0 +1,9 @@
+.button {
+  flex-shrink: 0;
+  margin: 0 12px 4px;
+
+  &:disabled {
+    cursor: default;
+    background: var(--color-brand-disabled);
+  }
+}

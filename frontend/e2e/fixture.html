@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Тестовый хостер виджета</title>
+    <style>
+      body {
+        margin: 0;
+        background: white;
+      }
+      #host {
+        padding: 16px;
+        font-family: monospace;
+      }
+      button {
+        background: lime;
+        border-radius: 0;
+        font-size: 30px;
+      }
+      p {
+        color: blue;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="host">
+      <p id="host-text">Сайт хостера</p>
+      <button id="host-button">Кнопка хостера</button>
+    </main>
+    <script src="/widget.js"></script>
+    <script>
+      window.testWidget = EnergyToolAssistant.mount({
+        debug: new URLSearchParams(location.search).get("debug") === "true",
+      });
+    </script>
+  </body>
+</html>

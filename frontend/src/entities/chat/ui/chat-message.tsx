@@ -34,6 +34,10 @@ export const ChatMessage = ({ message, showDebug }: ChatMessageProps) => {
             <div className={styles.debugSpacing}>
               <p className={styles.debug}>
                 Ответ за {responseTimeFormat.format(message.debug.responseTimeMs / 1000)} с
+                {message.debug.promptTokens !== undefined ? ` · Токены на входе: ${message.debug.promptTokens}` : null}
+                {message.debug.completionTokens !== undefined
+                  ? ` · Токены на выходе: ${message.debug.completionTokens}`
+                  : null}
                 {message.debug.sources.length > 0
                   ? ` · Источники: ${message.debug.sources.map((source) => `«${source}»`).join(", ")}`
                   : null}

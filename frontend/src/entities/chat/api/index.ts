@@ -1,1 +1,1 @@
-export { ChatMockService } from "./chat-mock.service";
+export { ChatService } from "./chat.service";

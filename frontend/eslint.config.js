@@ -55,7 +55,7 @@ const interfaceDeclarations = [
 ];
 
 export default defineConfig([
-  globalIgnores(["**/dist/"]),
+  globalIgnores(["**/dist/", "**/playwright-report/", "**/test-results/", "**/coverage/"]),
 
   {
     files: ["**/*.{js,mjs,cjs,jsx,ts,tsx}"],
@@ -68,8 +68,9 @@ export default defineConfig([
           message: "Объявляйте функции через const и стрелочный синтаксис.",
         },
         {
-          selector: "FunctionExpression[parent.kind!='constructor'][parent.kind!='get'][parent.kind!='set']",
-          message: "Используйте стрелочные функции, включая методы сервисов и обработчики.",
+          selector:
+            "FunctionExpression[parent.type!='MethodDefinition'][parent.kind!='constructor'][parent.kind!='get'][parent.kind!='set']",
+          message: "Используйте стрелочные функции, кроме методов классов.",
         },
       ],
     },
@@ -116,15 +117,7 @@ export default defineConfig([
         { blankLine: "always", prev: variableDeclarations, next: variableDeclarationsRequiringPadding },
         { blankLine: "always", prev: interfaceDeclarations, next: "*" },
       ],
-      "@stylistic/lines-between-class-members": [
-        "error",
-        {
-          enforce: [
-            { blankLine: "always", prev: "*", next: "*" },
-            { blankLine: "never", prev: "field", next: "field" },
-          ],
-        },
-      ],
+      "@stylistic/lines-between-class-members": ["error", "always", { exceptAfterSingleLine: true }],
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/no-floating-promises": "error",
       "@typescript-eslint/no-unused-vars": "off",

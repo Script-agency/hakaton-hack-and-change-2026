@@ -1,38 +1,49 @@
-import { useNavigate } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate, useSearchParams } from "react-router";
 
 import { LeadRequestForm } from "@features/lead-request";
 
-import { PageHeader } from "@shared/ui";
+import { parseChatId } from "@entities/chat/lib";
+import { chatQueryOptions } from "@entities/chat/model";
 
-import styles from "./lead-page.module.scss";
+import { LoadingState } from "@shared/ui";
 
-const previewSummary =
-  "Подозревает потери электроэнергии. Объект: склад и офис, около 40 точек учёта. " +
-  "Рекомендовано: АСКУЭ Energytool, баланс по вводу.";
+import { LeadPageError } from "./lead-page-error";
+import { LeadPageUnavailable } from "./lead-page-unavailable";
 
 interface LeadPageProps {
-  onBack?: () => void;
+  isActive: boolean;
 }
 
-export const LeadPage = ({ onBack }: LeadPageProps) => {
+export const LeadPage = ({ isActive }: LeadPageProps) => {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const rawChatId = params.get("chatId");
+  const chatId = parseChatId(rawChatId ?? undefined);
+  const hasInvalidId = rawChatId !== null && chatId === undefined;
 
-  const handleBack = () => {
-    if (onBack !== undefined) {
-      onBack();
-    } else {
-      void navigate("/", { replace: true });
-    }
-  };
+  const chat = useQuery({
+    ...chatQueryOptions(chatId ?? 0),
+    enabled: isActive && chatId !== undefined,
+  });
 
-  const handleSubmit = () => {
-    void navigate("/lead/sent");
-  };
+  if (hasInvalidId || (chatId !== undefined && chat.isError)) {
+    return <LeadPageError error={chat.error} hasInvalidId={hasInvalidId} onRetry={() => void chat.refetch()} />;
+  }
+
+  if (chatId !== undefined && chat.data === undefined) {
+    return <LoadingState label="Загружаю переписку…" />;
+  }
+
+  if (chat.data?.isCompleted !== true || chat.data.summary === null || chat.data.summary.trim().length === 0) {
+    return <LeadPageUnavailable chatId={chatId} />;
+  }
 
   return (
-    <div className={styles.page}>
-      <PageHeader onBack={handleBack} title="Заявка менеджеру" />
-      <LeadRequestForm onSubmit={handleSubmit} summary={previewSummary} />
-    </div>
+    <LeadRequestForm
+      conversation={{ conversationId: chat.data.id, fingerprint: chat.data.fingerprint, summary: chat.data.summary }}
+      isActive={isActive}
+      onSuccess={() => void navigate("/lead/sent", { replace: true })}
+    />
   );
 };
